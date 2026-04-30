@@ -14,61 +14,103 @@
   </head>
   <body>
     <main class="app-shell">
-      <aside class="sidebar" aria-label="Map controls">
-        <div class="brand">
-          <p class="eyebrow">CAMFED</p>
-          <h1>District Boundary Map</h1>
+      <aside class="resource-rail" aria-label="Resources">
+        <div class="logo-lockup">
+          <span class="logo-mark">CAMFED</span>
         </div>
 
-        <section class="control-group">
-          <label for="countrySelect">Country</label>
-          <select id="countrySelect">
-            <option value="all">All priority countries</option>
-            <option value="tanzania">Tanzania</option>
-            <option value="ghana">Ghana</option>
-            <option value="malawi">Malawi</option>
-            <option value="zambia">Zambia</option>
-            <option value="zimbabwe">Zimbabwe</option>
-          </select>
-        </section>
+        <nav class="resource-nav" aria-label="Resource links">
+          <p>Resources</p>
+          <a href="#map">Guides & Documentation</a>
+          <a href="#countryChart">Data Dictionary</a>
+        </nav>
 
-        <section class="control-group">
-          <label for="districtSearch">District</label>
-          <input id="districtSearch" type="search" placeholder="Search district name" />
-        </section>
-
-        <section class="control-group">
-          <label for="metricSelect">Color by</label>
-          <select id="metricSelect">
-            <option value="program_count">Program count</option>
-            <option value="beneficiary_count">Beneficiary count</option>
-            <option value="risk_score">Risk score</option>
-          </select>
-        </section>
-
-        <section class="chart-panel" aria-label="Country metric chart">
-          <div class="section-heading">
-            <h2 id="chartTitle">Country Summary</h2>
-            <span id="chartMetricLabel">Program count</span>
-          </div>
-          <div id="countryChart" class="bar-chart"></div>
-        </section>
-
-        <section class="legend" aria-label="Map legend">
-          <h2>Legend</h2>
-          <div class="legend-row"><span class="swatch low"></span>Lower value</div>
-          <div class="legend-row"><span class="swatch mid"></span>Medium value</div>
-          <div class="legend-row"><span class="swatch high"></span>Higher value</div>
-        </section>
-
-        <section class="status-panel" aria-live="polite">
-          <h2>Status</h2>
-          <p id="statusText">Loading map...</p>
-        </section>
+        <div class="rail-message">Empowering girls to create a future without limits.</div>
       </aside>
 
-      <section class="map-wrap" aria-label="District map">
-        <div id="map" aria-label="Leaflet district GeoJSON map"></div>
+      <section class="dashboard-shell">
+        <header class="topbar">
+          <div class="topnav" aria-label="Main navigation">
+            <a class="active" href="#map">Home</a>
+            <a href="#countryChart">Data Dashboard</a>
+            <a href="#map">Dynamic Data</a>
+            <a href="#filters">Data Slicer</a>
+          </div>
+        </header>
+
+        <section id="filters" class="filterbar" aria-label="Map filters">
+          <div class="control-group">
+            <label for="countrySelect">Country</label>
+            <select id="countrySelect">
+              <option value="all">All priority countries</option>
+              <option value="tanzania">Tanzania</option>
+              <option value="ghana">Ghana</option>
+              <option value="malawi">Malawi</option>
+              <option value="zambia">Zambia</option>
+              <option value="zimbabwe">Zimbabwe</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="districtSearch">District</label>
+            <input id="districtSearch" type="search" placeholder="Search district name" />
+          </div>
+
+          <div class="control-group">
+            <label for="metricSelect">Color by</label>
+            <select id="metricSelect">
+              <option value="program_count">Program count</option>
+              <option value="beneficiary_count">Beneficiary count</option>
+              <option value="risk_score">Risk score</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="dashboard-content">
+          <section class="hero-panel">
+            <div>
+              <p class="eyebrow">District Intelligence</p>
+              <h1>Africa District Boundary Dashboard</h1>
+              <p class="hero-copy">
+                Track district-level geography and programme indicators across
+                CAMFED partner countries.
+              </p>
+            </div>
+            <div class="hero-visual" aria-hidden="true"></div>
+          </section>
+
+          <section class="panel-grid">
+            <article class="panel panel-map">
+              <div class="panel-heading">
+                <h2>African District Boundaries</h2>
+                <span>Leaflet + Supabase</span>
+              </div>
+              <div id="map" aria-label="Leaflet district GeoJSON map"></div>
+            </article>
+
+            <article class="panel chart-panel" aria-label="Country metric chart">
+              <div class="panel-heading">
+                <h2 id="chartTitle">Priority Countries</h2>
+                <span id="chartMetricLabel">Program count</span>
+              </div>
+              <div id="countryChart" class="bar-chart"></div>
+            </article>
+          </section>
+
+          <section class="support-grid">
+            <article class="panel legend" aria-label="Map legend">
+              <h2>Legend</h2>
+              <div class="legend-row"><span class="swatch low"></span>Lower value</div>
+              <div class="legend-row"><span class="swatch mid"></span>Medium value</div>
+              <div class="legend-row"><span class="swatch high"></span>Higher value</div>
+            </article>
+
+            <article class="panel status-panel" aria-live="polite">
+              <h2>Status</h2>
+              <p id="statusText">Loading map...</p>
+            </article>
+          </section>
+        </section>
       </section>
     </main>
 

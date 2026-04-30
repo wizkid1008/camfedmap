@@ -362,6 +362,7 @@ function renderDistricts() {
     map.fitBounds(boundaryLayer.getBounds(), { padding: [28, 28] });
   }
 
+  map.invalidateSize();
   renderCountryChart(filtered);
   setStatus(`Showing ${filtered.length} district${filtered.length === 1 ? "" : "s"}.`);
 }
@@ -427,10 +428,10 @@ function districtStyle(feature) {
   const value = Number(feature.properties[metric] || 0);
 
   return {
-    color: isPriority ? "#17324d" : "#8b979f",
+    color: isPriority ? "#3f2875" : "#a49da8",
     weight: isPriority ? 1.4 : 0.7,
     opacity: isPriority ? 0.92 : 0.45,
-    fillColor: isPriority ? colorForValue(value, metric) : "#d7dfdd",
+    fillColor: isPriority ? colorForValue(value, metric) : "#ded8d1",
     fillOpacity: isPriority ? 0.72 : 0.28,
   };
 }
@@ -447,9 +448,9 @@ function colorForValue(value, metric) {
   };
   const [low, high] = ranges[metric];
 
-  if (value <= low) return "#c7e9b4";
-  if (value >= high) return "#225ea8";
-  return "#41b6c4";
+  if (value <= low) return "#d9d1e9";
+  if (value >= high) return "#6b22aa";
+  return "#b78f2f";
 }
 
 function bindDistrictPopup(feature, layer) {
