@@ -569,6 +569,7 @@ function getCountryOptions() {
 
   allDistricts
     .filter((district) => district.boundary_level !== "ADM0")
+    .filter(isPriorityCountry)
     .forEach((district) => {
       countries.set(district.country_slug, {
         slug: district.country_slug,
@@ -584,6 +585,7 @@ function refreshDistrictOptions() {
 
   allDistricts
     .filter((district) => district.boundary_level !== "ADM0")
+    .filter(isPriorityCountry)
     .filter((district) => selectedCountries.has(district.country_slug))
     .forEach((district) => {
       districts.set(getDistrictKey(district), {
@@ -733,7 +735,8 @@ function renderDistricts() {
     const districtKey = getDistrictKey(district);
     const countryMatch =
       isContextCountry ||
-      (selectedCountries.has(district.country_slug) &&
+      (isPriorityCountry(district) &&
+        selectedCountries.has(district.country_slug) &&
         selectedDistricts.has(districtKey));
     const districtMatch = isContextCountry || selectedDistricts.has(districtKey);
     return countryMatch && districtMatch;
