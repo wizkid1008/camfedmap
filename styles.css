@@ -76,8 +76,7 @@ body {
   text-transform: uppercase;
 }
 
-.resource-nav a,
-.topnav a {
+.resource-nav a {
   color: inherit;
   text-decoration: none;
 }
@@ -102,33 +101,6 @@ body {
 
 .dashboard-shell {
   min-width: 0;
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  min-height: 60px;
-  padding: 0 30px;
-  background: #fff;
-  border-bottom: 1px solid var(--line);
-}
-
-.topnav {
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  color: #5d566c;
-  font-weight: 700;
-}
-
-.topnav a {
-  padding: 20px 0 16px;
-  border-bottom: 3px solid transparent;
-}
-
-.topnav a.active {
-  color: var(--accent);
-  border-bottom-color: var(--rust);
 }
 
 .filterbar {
@@ -258,6 +230,10 @@ input:focus {
   border: 1px solid var(--line);
   border-radius: 14px;
   box-shadow: 0 8px 24px rgba(51, 38, 25, 0.08);
+}
+
+.panel-map {
+  position: relative;
 }
 
 .panel-heading {
@@ -403,6 +379,33 @@ input:focus {
   background-size: 44px 44px;
 }
 
+.map-empty {
+  position: absolute;
+  inset: 54px 0 0;
+  z-index: 500;
+  display: grid;
+  place-content: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+  background: rgba(247, 243, 238, 0.88);
+}
+
+.map-empty[hidden] {
+  display: none;
+}
+
+.map-empty strong {
+  color: var(--accent-dark);
+  font-size: 1.05rem;
+}
+
+.map-empty span {
+  max-width: 520px;
+  line-height: 1.5;
+}
+
 .district-popup {
   min-width: 180px;
 }
@@ -437,7 +440,6 @@ input:focus {
     display: none;
   }
 
-  .topbar,
   .filterbar,
   .dashboard-content {
     padding-left: 18px;

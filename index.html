@@ -29,15 +29,6 @@
       </aside>
 
       <section class="dashboard-shell">
-        <header class="topbar">
-          <div class="topnav" aria-label="Main navigation">
-            <a class="active" href="#map">Home</a>
-            <a href="#countryChart">Data Dashboard</a>
-            <a href="#map">Dynamic Data</a>
-            <a href="#filters">Data Slicer</a>
-          </div>
-        </header>
-
         <section id="filters" class="filterbar" aria-label="Map filters">
           <div class="control-group">
             <label for="countrySelect">Country</label>
@@ -86,6 +77,14 @@
                 <span>Leaflet + Supabase</span>
               </div>
               <div id="map" aria-label="Leaflet district GeoJSON map"></div>
+              <div id="mapEmpty" class="map-empty" hidden>
+                <strong>No boundary data loaded</strong>
+                <span>
+                  Supabase is connected, but the boundary view is returning no
+                  rows yet. Add African district shapes to
+                  district_boundaries_geojson to draw the map.
+                </span>
+              </div>
             </article>
 
             <article class="panel chart-panel" aria-label="Country metric chart">

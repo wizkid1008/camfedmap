@@ -239,6 +239,7 @@ const statusText = document.querySelector("#statusText");
 const chartTitle = document.querySelector("#chartTitle");
 const chartMetricLabel = document.querySelector("#chartMetricLabel");
 const countryChart = document.querySelector("#countryChart");
+const mapEmpty = document.querySelector("#mapEmpty");
 
 let allDistricts = [];
 let boundaryLayer;
@@ -279,7 +280,11 @@ async function loadDistricts() {
   }
 
   const districts = data.map(normalizeSupabaseDistrict);
-  setStatus(`Loaded ${districts.length} districts from Supabase.`);
+  setStatus(
+    districts.length > 0
+      ? `Loaded ${districts.length} districts from Supabase.`
+      : "Supabase connected, but no boundary rows were returned."
+  );
   return districts;
 }
 
@@ -362,9 +367,18 @@ function renderDistricts() {
     map.fitBounds(boundaryLayer.getBounds(), { padding: [28, 28] });
   }
 
+  updateMapEmptyState(filtered.length);
   map.invalidateSize();
   renderCountryChart(filtered);
-  setStatus(`Showing ${filtered.length} district${filtered.length === 1 ? "" : "s"}.`);
+  setStatus(
+    allDistricts.length === 0
+      ? "Supabase connected, but no boundary rows were returned."
+      : `Showing ${filtered.length} district${filtered.length === 1 ? "" : "s"}.`
+  );
+}
+
+function updateMapEmptyState(featureCount) {
+  mapEmpty.hidden = featureCount > 0;
 }
 
 function renderCountryChart(districts) {
