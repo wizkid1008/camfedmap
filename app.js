@@ -12,6 +12,7 @@ const SUPABASE_STORAGE_ADM2_URL =
 const BOUNDARY_SOURCE = "storage";
 const USE_LOCAL_GEOJSON = false;
 const PRIORITY_COUNTRIES = ["tanzania", "ghana", "malawi", "zambia", "zimbabwe"];
+const YEARS = Array.from({ length: 11 }, (_, index) => 2020 + index);
 const KPI_DEFINITIONS = [
   {
     key: "education_bursaries_children",
@@ -396,6 +397,7 @@ const districtList = document.querySelector("#districtList");
 const districtAll = document.querySelector("#districtAll");
 const districtNone = document.querySelector("#districtNone");
 const metricSelect = document.querySelector("#metricSelect");
+const yearSelect = document.querySelector("#yearSelect");
 const statusText = document.querySelector("#statusText");
 const chartTitle = document.querySelector("#chartTitle");
 const chartMetricLabel = document.querySelector("#chartMetricLabel");
@@ -415,6 +417,7 @@ let districtSelectionMode = "all";
 let loadedKpiRowCount = 0;
 
 populateKpiOptions();
+populateYearOptions();
 initializePlaceholderSlicers();
 
 function getSupabaseClient() {
@@ -815,7 +818,7 @@ function renderDistricts() {
       ? "Supabase connected, but no boundary rows were returned."
       : `Showing ${filtered.length} boundary layer${
           filtered.length === 1 ? "" : "s"
-        }. KPI rows loaded: ${loadedKpiRowCount}.`
+        }. KPI rows loaded: ${loadedKpiRowCount}. ${getKpiAvailabilityMessage(filtered)}`
   );
 }
 
@@ -931,12 +934,13 @@ function getMaxMetricValue(metric, districts) {
 function renderLegend(districts) {
   const metric = metricSelect.value;
   const label = getMetricLabel(metric);
+  const year = yearSelect.value;
   const max = getMaxMetricValue(metric, districts);
 
   if (max <= 0) {
     legendRows.innerHTML = `<div class="legend-row"><span class="swatch level-1"></span>No ${escapeHtml(
       label
-    )} values loaded</div>`;
+    )} values loaded for ${year}</div>`;
     return;
   }
 
@@ -949,7 +953,7 @@ function renderLegend(districts) {
         <span class="swatch" style="background: ${color}"></span>
         <span>Level ${level}: ${formatMetric(start, metric)}-${formatMetric(end, metric)} ${escapeHtml(
           label
-        )}</span>
+        )} (${year})</span>
       </div>
     `;
   }).join("");
@@ -998,17 +1002,56 @@ function getMetricLabel(metric) {
 }
 
 function getDistrictMetric(district, metric) {
-  if (district.kpis && Object.hasOwn(district.kpis, metric)) {
-    return Number(district.kpis[metric] || 0);
+  const year = yearSelect.value;
+  const value = getRawDistrictMetric(district, metric, year);
+  return Number(value || 0);
+}
+
+function getRawDistrictMetric(district, metric, year) {
+  if (!district.kpis) {
+    return district[metric];
   }
 
-  return Number(district[metric] || 0);
+  if (district.kpis.years && district.kpis.years[year]?.[metric] !== undefined) {
+    return district.kpis.years[year][metric];
+  }
+
+  if (district.kpis[year] && district.kpis[year][metric] !== undefined) {
+    return district.kpis[year][metric];
+  }
+
+  if (Object.hasOwn(district.kpis, metric)) {
+    return district.kpis[metric];
+  }
+
+  return district[metric];
 }
 
 function populateKpiOptions() {
   metricSelect.innerHTML = KPI_DEFINITIONS.map(
     (kpi) => `<option value="${kpi.key}">${escapeHtml(kpi.label)}</option>`
   ).join("");
+}
+
+function populateYearOptions() {
+  yearSelect.innerHTML = YEARS.map(
+    (year) => `<option value="${year}" ${year === 2025 ? "selected" : ""}>${year}</option>`
+  ).join("");
+}
+
+function getKpiAvailabilityMessage(districts) {
+  const metric = metricSelect.value;
+  const year = yearSelect.value;
+  const matchingValues = districts
+    .filter((district) => isPriorityCountry(district) && district.boundary_level !== "ADM0")
+    .map((district) => getRawDistrictMetric(district, metric, year))
+    .filter((value) => value !== undefined && value !== null);
+
+  if (matchingValues.length === 0) {
+    return `No KPI values found for ${getMetricLabel(metric)} in ${year}.`;
+  }
+
+  return `${matchingValues.length} KPI value${matchingValues.length === 1 ? "" : "s"} found for ${year}.`;
 }
 
 function escapeHtml(value) {
@@ -1027,6 +1070,7 @@ function escapeHtml(value) {
 countrySearch.addEventListener("input", renderCountryList);
 districtSearch.addEventListener("input", renderDistrictList);
 metricSelect.addEventListener("change", renderDistricts);
+yearSelect.addEventListener("change", renderDistricts);
 countryToggle.addEventListener("click", () => toggleMenu(countryMenu, districtMenu));
 districtToggle.addEventListener("click", () => toggleMenu(districtMenu, countryMenu));
 document.addEventListener("click", (event) => {

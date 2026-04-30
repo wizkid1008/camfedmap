@@ -105,7 +105,9 @@ body {
 
 .filterbar {
   display: grid;
-  grid-template-columns: minmax(230px, 0.8fr) minmax(280px, 1fr) minmax(320px, 1.2fr);
+  grid-template-columns:
+    minmax(210px, 0.8fr) minmax(260px, 1fr) minmax(300px, 1.1fr)
+    minmax(150px, 0.5fr);
   align-items: start;
   gap: 22px;
   padding: 18px 30px;
@@ -182,9 +184,14 @@ h2 {
   cursor: pointer;
 }
 
-.kpi-control select {
+.kpi-control select,
+.year-control select {
   min-width: 320px;
   border-color: var(--line);
+}
+
+.year-control select {
+  min-width: 130px;
 }
 
 .chevron {

@@ -33,11 +33,16 @@ values
 (
   'ghana',
   'Ghana',
-  'Northern Region',
+  'Greater Accra',
   18,
   12400,
   34,
   '{
+    "years": {
+      "2024": { "education_bursaries_children": 30000, "active_learner_guides": 230, "grants_disbursed": 130000 },
+      "2025": { "education_bursaries_children": 34004, "active_learner_guides": 260, "grants_disbursed": 142000 },
+      "2026": { "education_bursaries_children": 36000, "active_learner_guides": 280, "grants_disbursed": 150000 }
+    },
     "education_bursaries_children": 34004,
     "education_bursaries_children_annual": 2800,
     "education_bursaries_children_cumulative_2020_2030": 15720,
@@ -63,11 +68,16 @@ values
 (
   'malawi',
   'Malawi',
-  'Central Region',
+  'Central',
   12,
   8100,
   28,
   '{
+    "years": {
+      "2024": { "education_bursaries_children": 4300, "active_learner_guides": 62, "grants_disbursed": 39000 },
+      "2025": { "education_bursaries_children": 4986, "active_learner_guides": 75, "grants_disbursed": 42000 },
+      "2026": { "education_bursaries_children": 5400, "active_learner_guides": 82, "grants_disbursed": 45500 }
+    },
     "education_bursaries_children": 4986,
     "education_bursaries_children_annual": 640,
     "education_bursaries_children_cumulative_2020_2030": 3200,
@@ -93,11 +103,16 @@ values
 (
   'tanzania',
   'Tanzania',
-  'Arusha Region',
+  'Arusha',
   21,
   16300,
   42,
   '{
+    "years": {
+      "2024": { "education_bursaries_children": 14200, "active_learner_guides": 160, "grants_disbursed": 89000 },
+      "2025": { "education_bursaries_children": 15506, "active_learner_guides": 180, "grants_disbursed": 98000 },
+      "2026": { "education_bursaries_children": 17100, "active_learner_guides": 195, "grants_disbursed": 104000 }
+    },
     "education_bursaries_children": 15506,
     "education_bursaries_children_annual": 1300,
     "education_bursaries_children_cumulative_2020_2030": 8600,
@@ -123,11 +138,16 @@ values
 (
   'zambia',
   'Zambia',
-  'Lusaka Province',
+  'Lusaka',
   15,
   9800,
   38,
   '{
+    "years": {
+      "2024": { "education_bursaries_children": 26000, "active_learner_guides": 210, "grants_disbursed": 72000 },
+      "2025": { "education_bursaries_children": 28266, "active_learner_guides": 230, "grants_disbursed": 79000 },
+      "2026": { "education_bursaries_children": 30100, "active_learner_guides": 245, "grants_disbursed": 85000 }
+    },
     "education_bursaries_children": 28266,
     "education_bursaries_children_annual": 2100,
     "education_bursaries_children_cumulative_2020_2030": 14100,
@@ -153,11 +173,16 @@ values
 (
   'zimbabwe',
   'Zimbabwe',
-  'Harare Province',
+  'Harare',
   9,
   6900,
   47,
   '{
+    "years": {
+      "2024": { "education_bursaries_children": 11800, "active_learner_guides": 120, "grants_disbursed": 60000 },
+      "2025": { "education_bursaries_children": 12966, "active_learner_guides": 135, "grants_disbursed": 64000 },
+      "2026": { "education_bursaries_children": 14000, "active_learner_guides": 145, "grants_disbursed": 70000 }
+    },
     "education_bursaries_children": 12966,
     "education_bursaries_children_annual": 980,
     "education_bursaries_children_cumulative_2020_2030": 7400,
