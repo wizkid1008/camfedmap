@@ -404,6 +404,7 @@ let countryOptions = [];
 let districtOptions = [];
 let selectedCountries = new Set();
 let selectedDistricts = new Set();
+let loadedKpiRowCount = 0;
 
 populateKpiOptions();
 
@@ -463,6 +464,7 @@ async function loadStorageDistrictGeojson() {
     fetch(SUPABASE_STORAGE_ADM1_URL),
     loadSupabaseKpiRows(),
   ]);
+  loadedKpiRowCount = kpiRows.length;
 
   if (!adm0Response.ok) {
     throw new Error(`Could not load ${SUPABASE_STORAGE_ADM0_URL}`);
@@ -770,7 +772,9 @@ function renderDistricts() {
   setStatus(
     allDistricts.length === 0
       ? "Supabase connected, but no boundary rows were returned."
-      : `Showing ${filtered.length} district${filtered.length === 1 ? "" : "s"}.`
+      : `Showing ${filtered.length} boundary layer${
+          filtered.length === 1 ? "" : "s"
+        }. KPI rows loaded: ${loadedKpiRowCount}.`
   );
 }
 
@@ -856,16 +860,19 @@ function isPriorityCountry(district) {
 }
 
 function colorForValue(value, metric) {
-  const values = allDistricts
-    .filter((district) => isPriorityCountry(district) && district.boundary_level !== "ADM0")
-    .map((district) => getDistrictMetric(district, metric))
-    .filter((metricValue) => Number.isFinite(metricValue))
-    .sort((a, b) => a - b);
-  const low = values[Math.floor(values.length * 0.33)] || 0;
-  const high = values[Math.floor(values.length * 0.66)] || low;
+  const max = Math.max(
+    ...allDistricts
+      .filter((district) => isPriorityCountry(district) && district.boundary_level !== "ADM0")
+      .map((district) => getDistrictMetric(district, metric))
+      .filter((metricValue) => Number.isFinite(metricValue)),
+    0
+  );
 
-  if (value <= low) return "#d9d1e9";
-  if (value >= high) return "#6b22aa";
+  if (max <= 0) return "#d9d1e9";
+
+  const ratio = value / max;
+  if (ratio < 0.5) return "#d9d1e9";
+  if (ratio >= 0.75) return "#6b22aa";
   return "#b78f2f";
 }
 
