@@ -382,13 +382,17 @@ const map = L.map("map", {
 }).setView([-8, 24], 4);
 
 const countrySearch = document.querySelector("#countrySearch");
+const countryToggle = document.querySelector("#countryToggle");
+const countryMenu = document.querySelector("#countryMenu");
+const countryButtonText = document.querySelector("#countryButtonText");
 const countryList = document.querySelector("#countryList");
-const countryCount = document.querySelector("#countryCount");
 const countryAll = document.querySelector("#countryAll");
 const countryNone = document.querySelector("#countryNone");
 const districtSearch = document.querySelector("#districtSearch");
+const districtToggle = document.querySelector("#districtToggle");
+const districtMenu = document.querySelector("#districtMenu");
+const districtButtonText = document.querySelector("#districtButtonText");
 const districtList = document.querySelector("#districtList");
-const districtCount = document.querySelector("#districtCount");
 const districtAll = document.querySelector("#districtAll");
 const districtNone = document.querySelector("#districtNone");
 const metricSelect = document.querySelector("#metricSelect");
@@ -407,6 +411,7 @@ let selectedDistricts = new Set();
 let loadedKpiRowCount = 0;
 
 populateKpiOptions();
+initializePlaceholderSlicers();
 
 function getSupabaseClient() {
   const configured =
@@ -566,6 +571,19 @@ function initializeSlicers() {
   updateSlicerCounts();
 }
 
+function initializePlaceholderSlicers() {
+  countryOptions = PRIORITY_COUNTRIES.map((slug) => ({
+    slug,
+    name: getCountryNameFromSlug(slug),
+  }));
+  selectedCountries = new Set(countryOptions.map((country) => country.slug));
+  districtOptions = [];
+  selectedDistricts = new Set();
+  renderCountryList();
+  renderDistrictList();
+  updateSlicerCounts();
+}
+
 function getCountryOptions() {
   const countries = new Map();
 
@@ -580,6 +598,10 @@ function getCountryOptions() {
     });
 
   return Array.from(countries.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function getCountryNameFromSlug(slug) {
+  return Object.values(ISO3_TO_COUNTRY).find((country) => country.slug === slug)?.name || slug;
 }
 
 function refreshDistrictOptions() {
@@ -666,13 +688,23 @@ function renderCheckboxRow({ type, value, label, meta = "", checked }) {
 }
 
 function updateSlicerCounts() {
-  countryCount.textContent = formatSlicerCount(selectedCountries.size, countryOptions.length);
-  districtCount.textContent = formatSlicerCount(selectedDistricts.size, districtOptions.length);
+  countryButtonText.textContent = formatButtonText(
+    selectedCountries.size,
+    countryOptions.length,
+    "Countries"
+  );
+  districtButtonText.textContent = formatButtonText(
+    selectedDistricts.size,
+    districtOptions.length,
+    "Districts"
+  );
 }
 
-function formatSlicerCount(selectedCount, totalCount) {
-  if (totalCount === 0 || selectedCount === 0) return "None";
-  if (selectedCount === totalCount) return "All";
+function formatButtonText(selectedCount, totalCount, label) {
+  if (totalCount === 0) return `Loading ${label}`;
+  if (selectedCount === 0) return `No ${label}`;
+  if (selectedCount === totalCount) return `All ${label}`;
+  if (selectedCount === 1) return `1 ${label.slice(0, -1)}`;
   return `${selectedCount} of ${totalCount}`;
 }
 
@@ -941,6 +973,13 @@ function escapeHtml(value) {
 countrySearch.addEventListener("input", renderCountryList);
 districtSearch.addEventListener("input", renderDistrictList);
 metricSelect.addEventListener("change", renderDistricts);
+countryToggle.addEventListener("click", () => toggleMenu(countryMenu, districtMenu));
+districtToggle.addEventListener("click", () => toggleMenu(districtMenu, countryMenu));
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".slicer")) {
+    closeSlicerMenus();
+  }
+});
 countryAll.addEventListener("click", () => {
   selectedCountries = new Set(countryOptions.map((country) => country.slug));
   refreshDistrictOptions();
@@ -999,6 +1038,16 @@ districtList.addEventListener("change", (event) => {
   updateSlicerCounts();
   renderDistricts();
 });
+
+function toggleMenu(menuToToggle, menuToClose) {
+  menuToClose.hidden = true;
+  menuToToggle.hidden = !menuToToggle.hidden;
+}
+
+function closeSlicerMenus() {
+  countryMenu.hidden = true;
+  districtMenu.hidden = true;
+}
 
 loadDistricts()
   .then((districts) => {

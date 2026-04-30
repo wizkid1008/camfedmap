@@ -30,34 +30,42 @@
 
       <section class="dashboard-shell">
         <section id="filters" class="filterbar" aria-label="Map filters">
-          <div class="control-group slicer">
-            <div class="slicer-heading">
-              <label for="countrySearch">Country</label>
-              <span id="countryCount">All</span>
+          <div class="filter-control slicer">
+            <span class="filter-label">Country</span>
+            <button type="button" id="countryToggle" class="filter-button">
+              <span id="countryButtonText">All Countries</span>
+              <span class="chevron"></span>
+            </button>
+            <div id="countryMenu" class="slicer-menu" hidden>
+              <input id="countrySearch" type="search" placeholder="Search Countries..." />
+              <div class="slicer-links">
+                <button type="button" id="countryAll">Select All</button>
+                <span></span>
+                <button type="button" id="countryNone">Select None</button>
+              </div>
+              <div id="countryList" class="check-list" aria-label="Country options"></div>
             </div>
-            <input id="countrySearch" type="search" placeholder="Search countries" />
-            <div class="slicer-actions">
-              <button type="button" id="countryAll">All</button>
-              <button type="button" id="countryNone">None</button>
-            </div>
-            <div id="countryList" class="check-list" aria-label="Country options"></div>
           </div>
 
-          <div class="control-group slicer">
-            <div class="slicer-heading">
-              <label for="districtSearch">District</label>
-              <span id="districtCount">All</span>
+          <div class="filter-control slicer">
+            <span class="filter-label">District</span>
+            <button type="button" id="districtToggle" class="filter-button">
+              <span id="districtButtonText">Loading Districts</span>
+              <span class="chevron"></span>
+            </button>
+            <div id="districtMenu" class="slicer-menu district-menu" hidden>
+              <input id="districtSearch" type="search" placeholder="Search Districts..." />
+              <div class="slicer-links">
+                <button type="button" id="districtAll">Select All</button>
+                <span></span>
+                <button type="button" id="districtNone">Select None</button>
+              </div>
+              <div id="districtList" class="check-list" aria-label="District options"></div>
             </div>
-            <input id="districtSearch" type="search" placeholder="Search district name" />
-            <div class="slicer-actions">
-              <button type="button" id="districtAll">All</button>
-              <button type="button" id="districtNone">None</button>
-            </div>
-            <div id="districtList" class="check-list" aria-label="District options"></div>
           </div>
 
-          <div class="control-group">
-            <label for="metricSelect">KPI</label>
+          <div class="filter-control kpi-control">
+            <span class="filter-label">KPI</span>
             <select id="metricSelect"></select>
           </div>
         </section>
