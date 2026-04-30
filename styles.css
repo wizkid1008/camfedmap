@@ -423,6 +423,27 @@ input:focus {
   border-bottom: 1px solid var(--line);
 }
 
+.chart-panel .panel-heading {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.72fr) minmax(0, 1.28fr);
+  align-items: center;
+  gap: 18px;
+  min-height: 62px;
+  padding: 10px 18px;
+}
+
+.chart-panel .panel-heading h2 {
+  line-height: 1.25;
+}
+
+.chart-panel .panel-heading span {
+  display: block;
+  width: 100%;
+  padding: 10px 18px;
+  line-height: 1.25;
+  text-align: center;
+}
+
 .panel-heading h2,
 .legend h2,
 .status-panel h2 {
@@ -602,9 +623,18 @@ input:focus {
 }
 
 #statusText {
-  margin: 12px 16px 16px;
+  margin: 0;
   color: var(--muted);
   line-height: 1.45;
+}
+
+.status-panel {
+  padding: 18px 22px 22px;
+}
+
+.status-panel h2 {
+  margin-bottom: 14px;
+  line-height: 1.25;
 }
 
 #map {
