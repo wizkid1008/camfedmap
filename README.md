@@ -25,16 +25,19 @@ key is safe to use in a browser app when Row Level Security is enabled and only
 public read policies are granted.
 
 1. In Supabase, run `supabase-schema.sql` in the SQL editor.
-2. Import district boundary geometry into `public.district_boundaries`.
-3. In `app.js`, replace:
+2. To test the map immediately, run `seed-dummy-data.sql`. This creates simple
+   dummy district rectangles and KPI values.
+3. Replace the dummy rows later by importing real district boundary geometry
+   into `public.district_boundaries`.
+4. In `app.js`, replace:
 
 ```js
 const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
 const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
 ```
 
-4. Commit and push the updated `app.js`.
-5. Reload the map. The app reads from `district_boundaries_geojson`, which
+5. Commit and push the updated `app.js`.
+6. Reload the map. The app reads from `district_boundaries_geojson`, which
    converts the PostGIS `geom` field into browser-friendly GeoJSON.
 
 ## Data Shape
@@ -47,6 +50,7 @@ The app expects each district record to include:
 - `program_count`
 - `beneficiary_count`
 - `risk_score`
+- `kpis`: JSON object keyed by KPI code
 - `geometry`: GeoJSON Polygon or MultiPolygon
 
 ## Boundary Data

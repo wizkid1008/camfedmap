@@ -48,12 +48,8 @@
           </div>
 
           <div class="control-group">
-            <label for="metricSelect">Color by</label>
-            <select id="metricSelect">
-              <option value="program_count">Program count</option>
-              <option value="beneficiary_count">Beneficiary count</option>
-              <option value="risk_score">Risk score</option>
-            </select>
+            <label for="metricSelect">KPI</label>
+            <select id="metricSelect"></select>
           </div>
         </section>
 
@@ -82,7 +78,8 @@
                 <span>
                   Supabase is connected, but the boundary view is returning no
                   rows yet. Add African district shapes to
-                  district_boundaries_geojson to draw the map.
+                  district_boundaries_geojson, or run seed-dummy-data.sql, to
+                  draw the map.
                 </span>
               </div>
             </article>

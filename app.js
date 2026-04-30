@@ -5,6 +5,43 @@ const SUPABASE_BOUNDARY_VIEW = "district_boundaries_geojson";
 const DISTRICT_GEOJSON_FILE = "./geoBoundariesCGAZ_ADM2.geojson";
 const USE_LOCAL_GEOJSON = false;
 const PRIORITY_COUNTRIES = ["tanzania", "ghana", "malawi", "zambia", "zimbabwe"];
+const KPI_DEFINITIONS = [
+  {
+    key: "education_bursaries_children",
+    label: "Children Supported in School with Education Bursaries",
+  },
+  {
+    key: "education_bursaries_children_annual",
+    label: "Children Supported in School with Education Bursaries - Annual",
+  },
+  {
+    key: "education_bursaries_children_cumulative_2020_2030",
+    label:
+      "Children Supported in School with Education Bursaries - Cumulative 2020-2030",
+  },
+  {
+    key: "education_bursaries_children_cumulative_all_time",
+    label: "Children Supported in School with Education Bursaries - Cumulative all-time",
+  },
+  { key: "active_learner_guides", label: "Active Learner Guides" },
+  { key: "clients_by_form", label: "Number of Clients by Form" },
+  { key: "clients_by_form_girls", label: "Number of Clients by Form - Girls" },
+  { key: "clients_by_form_boys", label: "Number of Clients by Form - Boys" },
+  { key: "active_partner_schools", label: "Active Partner Schools" },
+  {
+    key: "women_supported_tertiary",
+    label: "Number of Women Supported by CAMFED in Tertiary Education",
+  },
+  { key: "active_guides_by_type", label: "Active Guides by Type" },
+  { key: "post_school_clients", label: "Number of Post School Clients" },
+  { key: "grants_disbursed", label: "Grants Disbursed" },
+  { key: "loans_disbursed", label: "Loans Disbursed" },
+  { key: "cama_members", label: "CAMA Members" },
+  { key: "active_guides_transition", label: "Active Guides - Transition" },
+  { key: "active_guides_agriculture", label: "Active Guides - Agriculture" },
+  { key: "active_guides_business", label: "Active Guides - Business" },
+  { key: "grants_distributed_count", label: "Grants Distributed - Count" },
+];
 const AFRICA_ISO3_CODES = [
   "DZA",
   "AGO",
@@ -127,6 +164,27 @@ const sampleDistricts = [
     program_count: 18,
     beneficiary_count: 12400,
     risk_score: 34,
+    kpis: {
+      education_bursaries_children: 34004,
+      education_bursaries_children_annual: 2800,
+      education_bursaries_children_cumulative_2020_2030: 15720,
+      education_bursaries_children_cumulative_all_time: 34004,
+      active_learner_guides: 260,
+      clients_by_form: 39735,
+      clients_by_form_girls: 21500,
+      clients_by_form_boys: 18235,
+      active_partner_schools: 210,
+      women_supported_tertiary: 480,
+      active_guides_by_type: 760,
+      post_school_clients: 9300,
+      grants_disbursed: 142000,
+      loans_disbursed: 46000,
+      cama_members: 11800,
+      active_guides_transition: 120,
+      active_guides_agriculture: 88,
+      active_guides_business: 74,
+      grants_distributed_count: 340,
+    },
     geometry: {
       type: "Polygon",
       coordinates: [
@@ -148,6 +206,27 @@ const sampleDistricts = [
     program_count: 12,
     beneficiary_count: 8100,
     risk_score: 28,
+    kpis: {
+      education_bursaries_children: 4986,
+      education_bursaries_children_annual: 640,
+      education_bursaries_children_cumulative_2020_2030: 3200,
+      education_bursaries_children_cumulative_all_time: 4986,
+      active_learner_guides: 75,
+      clients_by_form: 12460,
+      clients_by_form_girls: 7600,
+      clients_by_form_boys: 4860,
+      active_partner_schools: 62,
+      women_supported_tertiary: 110,
+      active_guides_by_type: 210,
+      post_school_clients: 2400,
+      grants_disbursed: 42000,
+      loans_disbursed: 9000,
+      cama_members: 4200,
+      active_guides_transition: 32,
+      active_guides_agriculture: 18,
+      active_guides_business: 24,
+      grants_distributed_count: 88,
+    },
     geometry: {
       type: "Polygon",
       coordinates: [
@@ -169,6 +248,27 @@ const sampleDistricts = [
     program_count: 21,
     beneficiary_count: 16300,
     risk_score: 42,
+    kpis: {
+      education_bursaries_children: 15506,
+      education_bursaries_children_annual: 1300,
+      education_bursaries_children_cumulative_2020_2030: 8600,
+      education_bursaries_children_cumulative_all_time: 15506,
+      active_learner_guides: 180,
+      clients_by_form: 34049,
+      clients_by_form_girls: 18600,
+      clients_by_form_boys: 15449,
+      active_partner_schools: 140,
+      women_supported_tertiary: 320,
+      active_guides_by_type: 540,
+      post_school_clients: 6800,
+      grants_disbursed: 98000,
+      loans_disbursed: 22000,
+      cama_members: 9200,
+      active_guides_transition: 76,
+      active_guides_agriculture: 58,
+      active_guides_business: 48,
+      grants_distributed_count: 210,
+    },
     geometry: {
       type: "Polygon",
       coordinates: [
@@ -190,6 +290,27 @@ const sampleDistricts = [
     program_count: 15,
     beneficiary_count: 9800,
     risk_score: 38,
+    kpis: {
+      education_bursaries_children: 28266,
+      education_bursaries_children_annual: 2100,
+      education_bursaries_children_cumulative_2020_2030: 14100,
+      education_bursaries_children_cumulative_all_time: 28266,
+      active_learner_guides: 230,
+      clients_by_form: 18792,
+      clients_by_form_girls: 9900,
+      clients_by_form_boys: 8892,
+      active_partner_schools: 175,
+      women_supported_tertiary: 260,
+      active_guides_by_type: 470,
+      post_school_clients: 5400,
+      grants_disbursed: 79000,
+      loans_disbursed: 17000,
+      cama_members: 7600,
+      active_guides_transition: 62,
+      active_guides_agriculture: 42,
+      active_guides_business: 36,
+      grants_distributed_count: 170,
+    },
     geometry: {
       type: "Polygon",
       coordinates: [
@@ -211,6 +332,27 @@ const sampleDistricts = [
     program_count: 9,
     beneficiary_count: 6900,
     risk_score: 47,
+    kpis: {
+      education_bursaries_children: 12966,
+      education_bursaries_children_annual: 980,
+      education_bursaries_children_cumulative_2020_2030: 7400,
+      education_bursaries_children_cumulative_all_time: 12966,
+      active_learner_guides: 135,
+      clients_by_form: 31754,
+      clients_by_form_girls: 16800,
+      clients_by_form_boys: 14954,
+      active_partner_schools: 115,
+      women_supported_tertiary: 210,
+      active_guides_by_type: 360,
+      post_school_clients: 3900,
+      grants_disbursed: 64000,
+      loans_disbursed: 14000,
+      cama_members: 6900,
+      active_guides_transition: 48,
+      active_guides_agriculture: 36,
+      active_guides_business: 30,
+      grants_distributed_count: 130,
+    },
     geometry: {
       type: "Polygon",
       coordinates: [
@@ -244,6 +386,8 @@ const mapEmpty = document.querySelector("#mapEmpty");
 let allDistricts = [];
 let boundaryLayer;
 
+populateKpiOptions();
+
 function getSupabaseClient() {
   const configured =
     SUPABASE_URL.startsWith("https://") && !SUPABASE_ANON_KEY.startsWith("YOUR_");
@@ -270,7 +414,7 @@ async function loadDistricts() {
   const { data, error } = await client
     .from(SUPABASE_BOUNDARY_VIEW)
     .select(
-      "id,country_slug,country_name,district_name,program_count,beneficiary_count,risk_score,geometry"
+      "id,country_slug,country_name,district_name,program_count,beneficiary_count,risk_score,kpis,geometry"
     );
 
   if (error) {
@@ -326,9 +470,15 @@ function normalizeSupabaseDistrict(row) {
     program_count: Number(row.program_count || 0),
     beneficiary_count: Number(row.beneficiary_count || 0),
     risk_score: Number(row.risk_score || 0),
+    kpis: normalizeKpis(row.kpis),
     geometry:
       typeof row.geometry === "string" ? JSON.parse(row.geometry) : row.geometry,
   };
+}
+
+function normalizeKpis(kpis) {
+  if (!kpis) return {};
+  return typeof kpis === "string" ? JSON.parse(kpis) : kpis;
 }
 
 function renderDistricts() {
@@ -423,7 +573,7 @@ function aggregateByCountry(districts, metric) {
       total: 0,
       count: 0,
     };
-    current.total += Number(district[metric] || 0);
+    current.total += getDistrictMetric(district, metric);
     current.count += 1;
     grouped.set(district.country_slug, current);
   });
@@ -439,7 +589,7 @@ function aggregateByCountry(districts, metric) {
 function districtStyle(feature) {
   const metric = metricSelect.value;
   const isPriority = isPriorityCountry(feature.properties);
-  const value = Number(feature.properties[metric] || 0);
+  const value = getDistrictMetric(feature.properties, metric);
 
   return {
     color: isPriority ? "#3f2875" : "#a49da8",
@@ -455,12 +605,13 @@ function isPriorityCountry(district) {
 }
 
 function colorForValue(value, metric) {
-  const ranges = {
-    program_count: [8, 16],
-    beneficiary_count: [7500, 12500],
-    risk_score: [30, 42],
-  };
-  const [low, high] = ranges[metric];
+  const values = allDistricts
+    .filter(isPriorityCountry)
+    .map((district) => getDistrictMetric(district, metric))
+    .filter((metricValue) => Number.isFinite(metricValue))
+    .sort((a, b) => a - b);
+  const low = values[Math.floor(values.length * 0.33)] || 0;
+  const high = values[Math.floor(values.length * 0.66)] || low;
 
   if (value <= low) return "#d9d1e9";
   if (value >= high) return "#6b22aa";
@@ -469,13 +620,14 @@ function colorForValue(value, metric) {
 
 function bindDistrictPopup(feature, layer) {
   const district = feature.properties;
+  const metric = metricSelect.value;
   layer.bindPopup(`
     <div class="district-popup">
       <strong>${escapeHtml(district.district_name)}, ${escapeHtml(district.country_name)}</strong>
       <dl>
+        <dt>${escapeHtml(getMetricLabel(metric))}</dt><dd>${formatMetric(getDistrictMetric(district, metric), metric)}</dd>
         <dt>Programs</dt><dd>${formatNumber(district.program_count)}</dd>
         <dt>Beneficiaries</dt><dd>${formatNumber(district.beneficiary_count)}</dd>
-        <dt>Risk score</dt><dd>${formatNumber(district.risk_score)}</dd>
       </dl>
     </div>
   `);
@@ -499,6 +651,20 @@ function formatMetric(value, metric) {
 
 function getMetricLabel(metric) {
   return metricSelect.querySelector(`option[value="${metric}"]`).textContent;
+}
+
+function getDistrictMetric(district, metric) {
+  if (district.kpis && Object.hasOwn(district.kpis, metric)) {
+    return Number(district.kpis[metric] || 0);
+  }
+
+  return Number(district[metric] || 0);
+}
+
+function populateKpiOptions() {
+  metricSelect.innerHTML = KPI_DEFINITIONS.map(
+    (kpi) => `<option value="${kpi.key}">${escapeHtml(kpi.label)}</option>`
+  ).join("");
 }
 
 function escapeHtml(value) {
