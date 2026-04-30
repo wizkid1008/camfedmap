@@ -1,8 +1,9 @@
 const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
 const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+const SUPABASE_BOUNDARY_VIEW = "district_boundaries_geojson";
 
 const DISTRICT_GEOJSON_FILE = "./geoBoundariesCGAZ_ADM2.geojson";
-const USE_LOCAL_GEOJSON = true;
+const USE_LOCAL_GEOJSON = false;
 const PRIORITY_COUNTRIES = ["tanzania", "ghana", "malawi", "zambia", "zimbabwe"];
 const ISO3_TO_COUNTRY = {
   TZA: { slug: "tanzania", name: "Tanzania" },
@@ -158,7 +159,7 @@ async function loadDistricts() {
   }
 
   const { data, error } = await client
-    .from("district_boundaries_geojson")
+    .from(SUPABASE_BOUNDARY_VIEW)
     .select(
       "id,country_slug,country_name,district_name,program_count,beneficiary_count,risk_score,geometry"
     )
@@ -170,8 +171,9 @@ async function loadDistricts() {
     return sampleDistricts;
   }
 
-  setStatus(`Loaded ${data.length} districts from Supabase.`);
-  return data;
+  const districts = data.map(normalizeSupabaseDistrict);
+  setStatus(`Loaded ${districts.length} districts from Supabase.`);
+  return districts;
 }
 
 async function loadLocalDistrictGeojson() {
@@ -203,6 +205,17 @@ function normalizeGeoBoundaryFeature(feature) {
     beneficiary_count: 0,
     risk_score: 0,
     geometry: feature.geometry,
+  };
+}
+
+function normalizeSupabaseDistrict(row) {
+  return {
+    ...row,
+    program_count: Number(row.program_count || 0),
+    beneficiary_count: Number(row.beneficiary_count || 0),
+    risk_score: Number(row.risk_score || 0),
+    geometry:
+      typeof row.geometry === "string" ? JSON.parse(row.geometry) : row.geometry,
   };
 }
 
@@ -314,6 +327,6 @@ loadDistricts()
   .catch((error) => {
     console.error(error);
     allDistricts = sampleDistricts;
-    setStatus("Local GeoJSON could not load, so sample data is shown.");
+    setStatus("Boundary data could not load, so sample data is shown.");
     renderDistricts();
   });

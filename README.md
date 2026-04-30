@@ -14,15 +14,15 @@ node server.js
 
 Then visit `http://localhost:8080`.
 
-The app loads `geoBoundariesCGAZ_ADM2.geojson` from the root folder and filters
-it to Tanzania, Ghana, Malawi, Zambia, and Zimbabwe. Opening `index.html`
-directly may block the GeoJSON request because browsers restrict local file
-fetches.
+The published app loads district boundaries from Supabase. If you temporarily
+set `USE_LOCAL_GEOJSON` to `true` in `app.js`, the app can load
+`geoBoundariesCGAZ_ADM2.geojson` from the root folder while running locally.
 
 ## Connect Supabase
 
-The current app uses the local root GeoJSON file first. To switch back to
-Supabase later, set `USE_LOCAL_GEOJSON` to `false` in `app.js`.
+The app reads from `district_boundaries_geojson` by default. The Supabase anon
+key is safe to use in a browser app when Row Level Security is enabled and only
+public read policies are granted.
 
 1. In Supabase, run `supabase-schema.sql` in the SQL editor.
 2. Import district boundary geometry into `public.district_boundaries`.
@@ -33,7 +33,8 @@ const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
 const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
 ```
 
-4. Reload the map. The app reads from `district_boundaries_geojson`, which
+4. Commit and push the updated `app.js`.
+5. Reload the map. The app reads from `district_boundaries_geojson`, which
    converts the PostGIS `geom` field into browser-friendly GeoJSON.
 
 ## Data Shape
