@@ -30,21 +30,30 @@
 
       <section class="dashboard-shell">
         <section id="filters" class="filterbar" aria-label="Map filters">
-          <div class="control-group">
-            <label for="countrySelect">Country</label>
-            <select id="countrySelect">
-              <option value="all">All priority countries</option>
-              <option value="tanzania">Tanzania</option>
-              <option value="ghana">Ghana</option>
-              <option value="malawi">Malawi</option>
-              <option value="zambia">Zambia</option>
-              <option value="zimbabwe">Zimbabwe</option>
-            </select>
+          <div class="control-group slicer">
+            <div class="slicer-heading">
+              <label for="countrySearch">Country</label>
+              <span id="countryCount">All</span>
+            </div>
+            <input id="countrySearch" type="search" placeholder="Search countries" />
+            <div class="slicer-actions">
+              <button type="button" id="countryAll">All</button>
+              <button type="button" id="countryNone">None</button>
+            </div>
+            <div id="countryList" class="check-list" aria-label="Country options"></div>
           </div>
 
-          <div class="control-group">
-            <label for="districtSearch">District</label>
+          <div class="control-group slicer">
+            <div class="slicer-heading">
+              <label for="districtSearch">District</label>
+              <span id="districtCount">All</span>
+            </div>
             <input id="districtSearch" type="search" placeholder="Search district name" />
+            <div class="slicer-actions">
+              <button type="button" id="districtAll">All</button>
+              <button type="button" id="districtNone">None</button>
+            </div>
+            <div id="districtList" class="check-list" aria-label="District options"></div>
           </div>
 
           <div class="control-group">

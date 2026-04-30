@@ -381,8 +381,16 @@ const map = L.map("map", {
   attributionControl: false,
 }).setView([-8, 24], 4);
 
-const countrySelect = document.querySelector("#countrySelect");
+const countrySearch = document.querySelector("#countrySearch");
+const countryList = document.querySelector("#countryList");
+const countryCount = document.querySelector("#countryCount");
+const countryAll = document.querySelector("#countryAll");
+const countryNone = document.querySelector("#countryNone");
 const districtSearch = document.querySelector("#districtSearch");
+const districtList = document.querySelector("#districtList");
+const districtCount = document.querySelector("#districtCount");
+const districtAll = document.querySelector("#districtAll");
+const districtNone = document.querySelector("#districtNone");
 const metricSelect = document.querySelector("#metricSelect");
 const statusText = document.querySelector("#statusText");
 const chartTitle = document.querySelector("#chartTitle");
@@ -392,6 +400,10 @@ const mapEmpty = document.querySelector("#mapEmpty");
 
 let allDistricts = [];
 let boundaryLayer;
+let countryOptions = [];
+let districtOptions = [];
+let selectedCountries = new Set();
+let selectedDistricts = new Set();
 
 populateKpiOptions();
 
@@ -543,6 +555,123 @@ function getDistrictKey(district) {
   return `${district.country_slug}::${district.district_name}`.toLowerCase();
 }
 
+function initializeSlicers() {
+  countryOptions = getCountryOptions();
+  selectedCountries = new Set(countryOptions.map((country) => country.slug));
+  refreshDistrictOptions();
+  renderCountryList();
+  renderDistrictList();
+  updateSlicerCounts();
+}
+
+function getCountryOptions() {
+  const countries = new Map();
+
+  allDistricts
+    .filter((district) => district.boundary_level !== "ADM0")
+    .forEach((district) => {
+      countries.set(district.country_slug, {
+        slug: district.country_slug,
+        name: district.country_name,
+      });
+    });
+
+  return Array.from(countries.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function refreshDistrictOptions() {
+  const districts = new Map();
+
+  allDistricts
+    .filter((district) => district.boundary_level !== "ADM0")
+    .filter((district) => selectedCountries.has(district.country_slug))
+    .forEach((district) => {
+      districts.set(getDistrictKey(district), {
+        key: getDistrictKey(district),
+        name: district.district_name,
+        countrySlug: district.country_slug,
+        countryName: district.country_name,
+      });
+    });
+
+  districtOptions = Array.from(districts.values()).sort((a, b) => {
+    const countryCompare = a.countryName.localeCompare(b.countryName);
+    return countryCompare || a.name.localeCompare(b.name);
+  });
+
+  selectedDistricts = new Set(
+    districtOptions
+      .filter((district) => selectedDistricts.size === 0 || selectedDistricts.has(district.key))
+      .map((district) => district.key)
+  );
+
+  if (selectedDistricts.size === 0 && districtOptions.length > 0) {
+    selectedDistricts = new Set(districtOptions.map((district) => district.key));
+  }
+}
+
+function renderCountryList() {
+  const searchTerm = countrySearch.value.trim().toLowerCase();
+  const visibleCountries = countryOptions.filter((country) =>
+    country.name.toLowerCase().includes(searchTerm)
+  );
+
+  countryList.innerHTML = visibleCountries
+    .map((country) =>
+      renderCheckboxRow({
+        type: "country",
+        value: country.slug,
+        label: country.name,
+        checked: selectedCountries.has(country.slug),
+      })
+    )
+    .join("");
+}
+
+function renderDistrictList() {
+  const searchTerm = districtSearch.value.trim().toLowerCase();
+  const visibleDistricts = districtOptions.filter((district) =>
+    `${district.name} ${district.countryName}`.toLowerCase().includes(searchTerm)
+  );
+
+  districtList.innerHTML = visibleDistricts
+    .map((district) =>
+      renderCheckboxRow({
+        type: "district",
+        value: district.key,
+        label: district.name,
+        meta: district.countryName,
+        checked: selectedDistricts.has(district.key),
+      })
+    )
+    .join("");
+}
+
+function renderCheckboxRow({ type, value, label, meta = "", checked }) {
+  return `
+    <label class="check-row">
+      <input type="checkbox" data-type="${type}" value="${escapeHtml(value)}" ${
+        checked ? "checked" : ""
+      } />
+      <span>
+        ${escapeHtml(label)}
+        ${meta ? `<small>${escapeHtml(meta)}</small>` : ""}
+      </span>
+    </label>
+  `;
+}
+
+function updateSlicerCounts() {
+  countryCount.textContent = formatSlicerCount(selectedCountries.size, countryOptions.length);
+  districtCount.textContent = formatSlicerCount(selectedDistricts.size, districtOptions.length);
+}
+
+function formatSlicerCount(selectedCount, totalCount) {
+  if (totalCount === 0 || selectedCount === 0) return "None";
+  if (selectedCount === totalCount) return "All";
+  return `${selectedCount} of ${totalCount}`;
+}
+
 async function loadLocalDistrictGeojson() {
   setStatus("Loading local ADM2 district GeoJSON...");
 
@@ -599,19 +728,14 @@ function normalizeKpis(kpis) {
 }
 
 function renderDistricts() {
-  const selectedCountry = countrySelect.value;
-  const searchTerm = districtSearch.value.trim().toLowerCase();
   const filtered = allDistricts.filter((district) => {
     const isContextCountry = district.boundary_level === "ADM0";
+    const districtKey = getDistrictKey(district);
     const countryMatch =
       isContextCountry ||
-      selectedCountry === "all" ||
-      district.country_slug === selectedCountry ||
-      !isPriorityCountry(district);
-    const districtMatch =
-      isContextCountry ||
-      !isPriorityCountry(district) ||
-      district.district_name.toLowerCase().includes(searchTerm);
+      (selectedCountries.has(district.country_slug) &&
+        selectedDistricts.has(districtKey));
+    const districtMatch = isContextCountry || selectedDistricts.has(districtKey);
     return countryMatch && districtMatch;
   });
 
@@ -660,7 +784,7 @@ function renderCountryChart(districts) {
   const maxValue = Math.max(...countryRows.map((row) => row.value), 0);
 
   chartTitle.textContent =
-    countrySelect.value === "all" ? "Priority Countries" : "Selected Country";
+    selectedCountries.size === countryOptions.length ? "Selected Countries" : "Filtered Countries";
   chartMetricLabel.textContent = getMetricLabel(metric);
   countryChart.innerHTML = "";
 
@@ -804,18 +928,78 @@ function escapeHtml(value) {
   });
 }
 
-countrySelect.addEventListener("change", renderDistricts);
-districtSearch.addEventListener("input", renderDistricts);
+countrySearch.addEventListener("input", renderCountryList);
+districtSearch.addEventListener("input", renderDistrictList);
 metricSelect.addEventListener("change", renderDistricts);
+countryAll.addEventListener("click", () => {
+  selectedCountries = new Set(countryOptions.map((country) => country.slug));
+  refreshDistrictOptions();
+  selectedDistricts = new Set(districtOptions.map((district) => district.key));
+  renderCountryList();
+  renderDistrictList();
+  updateSlicerCounts();
+  renderDistricts();
+});
+countryNone.addEventListener("click", () => {
+  selectedCountries = new Set();
+  selectedDistricts = new Set();
+  refreshDistrictOptions();
+  renderCountryList();
+  renderDistrictList();
+  updateSlicerCounts();
+  renderDistricts();
+});
+districtAll.addEventListener("click", () => {
+  selectedDistricts = new Set(districtOptions.map((district) => district.key));
+  renderDistrictList();
+  updateSlicerCounts();
+  renderDistricts();
+});
+districtNone.addEventListener("click", () => {
+  selectedDistricts = new Set();
+  renderDistrictList();
+  updateSlicerCounts();
+  renderDistricts();
+});
+countryList.addEventListener("change", (event) => {
+  if (!event.target.matches('input[data-type="country"]')) return;
+
+  if (event.target.checked) {
+    selectedCountries.add(event.target.value);
+  } else {
+    selectedCountries.delete(event.target.value);
+  }
+
+  refreshDistrictOptions();
+  renderCountryList();
+  renderDistrictList();
+  updateSlicerCounts();
+  renderDistricts();
+});
+districtList.addEventListener("change", (event) => {
+  if (!event.target.matches('input[data-type="district"]')) return;
+
+  if (event.target.checked) {
+    selectedDistricts.add(event.target.value);
+  } else {
+    selectedDistricts.delete(event.target.value);
+  }
+
+  renderDistrictList();
+  updateSlicerCounts();
+  renderDistricts();
+});
 
 loadDistricts()
   .then((districts) => {
     allDistricts = districts;
+    initializeSlicers();
     renderDistricts();
   })
   .catch((error) => {
     console.error(error);
     allDistricts = sampleDistricts;
+    initializeSlicers();
     setStatus("Boundary data could not load, so sample data is shown.");
     renderDistricts();
   });

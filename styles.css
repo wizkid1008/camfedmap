@@ -105,7 +105,7 @@ body {
 
 .filterbar {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) minmax(220px, 1fr);
+  grid-template-columns: minmax(260px, 1fr) minmax(320px, 1.4fr) minmax(220px, 0.8fr);
   gap: 14px;
   padding: 14px 30px;
   background:
@@ -151,6 +151,90 @@ h2 {
 .control-group {
   display: grid;
   gap: 6px;
+}
+
+.slicer {
+  align-content: start;
+}
+
+.slicer-heading,
+.slicer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.slicer-heading span {
+  color: var(--accent-dark);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.slicer-actions {
+  justify-content: flex-start;
+}
+
+.slicer-actions button {
+  min-height: 28px;
+  padding: 0 10px;
+  color: var(--accent-dark);
+  background: var(--lavender);
+  border: 1px solid #ded3ef;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.check-list {
+  display: grid;
+  gap: 4px;
+  max-height: 156px;
+  overflow: auto;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.check-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  padding: 6px 7px;
+  color: var(--ink);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.check-row:hover {
+  background: var(--lavender);
+}
+
+.check-row input {
+  width: 16px;
+  min-height: 16px;
+  margin: 2px 0 0;
+  accent-color: var(--accent);
+}
+
+.check-row span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  font-size: 0.88rem;
+  line-height: 1.25;
+}
+
+.check-row small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 label {
