@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CAMFED District Map</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIINfQF9iTXQo9u4xy7qWnGgF5N8p6vW3hE="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="Map controls">
+        <div class="brand">
+          <p class="eyebrow">CAMFED</p>
+          <h1>District Boundary Map</h1>
+        </div>
+
+        <section class="control-group">
+          <label for="countrySelect">Country</label>
+          <select id="countrySelect">
+            <option value="all">All priority countries</option>
+            <option value="tanzania">Tanzania</option>
+            <option value="ghana">Ghana</option>
+            <option value="malawi">Malawi</option>
+            <option value="zambia">Zambia</option>
+            <option value="zimbabwe">Zimbabwe</option>
+          </select>
+        </section>
+
+        <section class="control-group">
+          <label for="districtSearch">District</label>
+          <input id="districtSearch" type="search" placeholder="Search district name" />
+        </section>
+
+        <section class="control-group">
+          <label for="metricSelect">Color by</label>
+          <select id="metricSelect">
+            <option value="program_count">Program count</option>
+            <option value="beneficiary_count">Beneficiary count</option>
+            <option value="risk_score">Risk score</option>
+          </select>
+        </section>
+
+        <section class="legend" aria-label="Map legend">
+          <h2>Legend</h2>
+          <div class="legend-row"><span class="swatch low"></span>Lower value</div>
+          <div class="legend-row"><span class="swatch mid"></span>Medium value</div>
+          <div class="legend-row"><span class="swatch high"></span>Higher value</div>
+        </section>
+
+        <section class="status-panel" aria-live="polite">
+          <h2>Status</h2>
+          <p id="statusText">Loading map...</p>
+        </section>
+      </aside>
+
+      <section class="map-wrap" aria-label="District map">
+        <div id="map" aria-label="Leaflet district GeoJSON map"></div>
+      </section>
+    </main>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
