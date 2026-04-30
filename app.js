@@ -405,6 +405,7 @@ const chartTitle = document.querySelector("#chartTitle");
 const chartMetricLabel = document.querySelector("#chartMetricLabel");
 const countryChart = document.querySelector("#countryChart");
 const mapEmpty = document.querySelector("#mapEmpty");
+const legendSubtitle = document.querySelector("#legendSubtitle");
 const legendRows = document.querySelector("#legendRows");
 
 const LEVEL_COLORS = ["#e7e0f0", "#c9bbdd", "#b78f2f", "#b5533d", "#6b22aa"];
@@ -947,11 +948,14 @@ function renderLegend(districts) {
   const label = getMetricLabel(metric);
   const year = yearSelect.value;
   const max = getMaxMetricValue(metric, districts);
+  legendSubtitle.textContent = `${label} - ${year}`;
 
   if (max <= 0) {
-    legendRows.innerHTML = `<div class="legend-row"><span class="swatch level-1"></span>No ${escapeHtml(
-      label
-    )} values loaded for ${year}</div>`;
+    legendRows.innerHTML = `
+      <div class="legend-empty">
+        No values loaded for this KPI and year.
+      </div>
+    `;
     return;
   }
 
@@ -962,9 +966,11 @@ function renderLegend(districts) {
     return `
       <div class="legend-row">
         <span class="swatch" style="background: ${color}"></span>
-        <span>Level ${level}: ${formatMetric(start, metric)}-${formatMetric(end, metric)} ${escapeHtml(
-          label
-        )} (${year})</span>
+        <span class="legend-level">Level ${level}</span>
+        <span class="legend-range">${formatMetric(start, metric)} - ${formatMetric(
+          end,
+          metric
+        )}</span>
       </div>
     `;
   }).join("");
