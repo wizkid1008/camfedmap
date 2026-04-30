@@ -14,9 +14,9 @@ node server.js
 
 Then visit `http://localhost:8080`.
 
-The published app loads African ADM2 district boundaries directly from the
-public Supabase Storage file in the `MapShapes` bucket. It can also read KPI
-values from `district_boundaries_geojson` when matching district rows exist.
+The published app loads African ADM0 country and ADM1 region boundaries directly
+from public Supabase Storage files in the `MapShapes` bucket. It can also read
+KPI values from `district_boundaries_geojson` when matching rows exist.
 
 ## Connect Supabase
 

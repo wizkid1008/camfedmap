@@ -3,7 +3,11 @@ const SUPABASE_ANON_KEY = "sb_publishable_MFmdnO0fxCH-TASV_o77FQ_XeO8SoAk";
 const SUPABASE_BOUNDARY_VIEW = "district_boundaries_geojson";
 
 const DISTRICT_GEOJSON_FILE = "./geoBoundariesCGAZ_ADM2.geojson";
-const SUPABASE_STORAGE_GEOJSON_URL =
+const SUPABASE_STORAGE_ADM0_URL =
+  "https://qlvayqyihfixikfqfelu.supabase.co/storage/v1/object/public/MapShapes/geoBoundariesCGAZ_ADM0.geojson";
+const SUPABASE_STORAGE_ADM1_URL =
+  "https://qlvayqyihfixikfqfelu.supabase.co/storage/v1/object/public/MapShapes/geoBoundariesCGAZ_ADM1.geojson";
+const SUPABASE_STORAGE_ADM2_URL =
   "https://qlvayqyihfixikfqfelu.supabase.co/storage/v1/object/public/MapShapes/geoBoundariesCGAZ_ADM2.geojson";
 const BOUNDARY_SOURCE = "storage";
 const USE_LOCAL_GEOJSON = false;
@@ -440,31 +444,43 @@ async function loadDistricts() {
 }
 
 async function loadStorageDistrictGeojson() {
-  setStatus("Loading ADM2 boundaries from Supabase Storage...");
+  setStatus("Loading African country and region boundaries from Supabase Storage...");
 
-  const [geojsonResponse, kpiRows] = await Promise.all([
-    fetch(SUPABASE_STORAGE_GEOJSON_URL),
+  const [adm0Response, adm1Response, kpiRows] = await Promise.all([
+    fetch(SUPABASE_STORAGE_ADM0_URL),
+    fetch(SUPABASE_STORAGE_ADM1_URL),
     loadSupabaseKpiRows(),
   ]);
 
-  if (!geojsonResponse.ok) {
-    throw new Error(`Could not load ${SUPABASE_STORAGE_GEOJSON_URL}`);
+  if (!adm0Response.ok) {
+    throw new Error(`Could not load ${SUPABASE_STORAGE_ADM0_URL}`);
   }
 
-  const geojson = await geojsonResponse.json();
+  if (!adm1Response.ok) {
+    throw new Error(`Could not load ${SUPABASE_STORAGE_ADM1_URL}`);
+  }
+
+  const [adm0Geojson, adm1Geojson] = await Promise.all([
+    adm0Response.json(),
+    adm1Response.json(),
+  ]);
   const kpisByDistrict = indexKpiRows(kpiRows);
-  const districts = geojson.features
+  const countryContext = adm0Geojson.features
+    .filter((feature) => AFRICA_ISO3_CODES.includes(feature.properties.shapeGroup))
+    .map(normalizeStorageFeature);
+  const regions = adm1Geojson.features
     .filter((feature) => AFRICA_ISO3_CODES.includes(feature.properties.shapeGroup))
     .map((feature) => {
-      const district = normalizeGeoBoundaryFeature(feature);
+      const district = normalizeStorageFeature(feature);
       return {
         ...district,
         ...getMergedKpiValues(district, kpisByDistrict),
       };
     });
+  const districts = [...countryContext, ...regions];
 
   setStatus(
-    `Loaded ${districts.length} African district boundaries from Supabase Storage.`
+    `Loaded ${countryContext.length} countries and ${regions.length} regions from Supabase Storage.`
   );
   return districts;
 }
@@ -545,13 +561,19 @@ async function loadLocalDistrictGeojson() {
 }
 
 function normalizeGeoBoundaryFeature(feature) {
+  return normalizeStorageFeature(feature);
+}
+
+function normalizeStorageFeature(feature) {
   const country = ISO3_TO_COUNTRY[feature.properties.shapeGroup];
+  const shapeType = feature.properties.shapeType || "ADM";
 
   return {
     id: feature.properties.shapeID,
     country_slug: country.slug,
     country_name: country.name,
     district_name: feature.properties.shapeName,
+    boundary_level: shapeType,
     program_count: 0,
     beneficiary_count: 0,
     risk_score: 0,
@@ -580,11 +602,14 @@ function renderDistricts() {
   const selectedCountry = countrySelect.value;
   const searchTerm = districtSearch.value.trim().toLowerCase();
   const filtered = allDistricts.filter((district) => {
+    const isContextCountry = district.boundary_level === "ADM0";
     const countryMatch =
+      isContextCountry ||
       selectedCountry === "all" ||
       district.country_slug === selectedCountry ||
       !isPriorityCountry(district);
     const districtMatch =
+      isContextCountry ||
       !isPriorityCountry(district) ||
       district.district_name.toLowerCase().includes(searchTerm);
     return countryMatch && districtMatch;
@@ -628,7 +653,9 @@ function updateMapEmptyState(featureCount) {
 
 function renderCountryChart(districts) {
   const metric = metricSelect.value;
-  const priorityDistricts = districts.filter(isPriorityCountry);
+  const priorityDistricts = districts.filter(
+    (district) => isPriorityCountry(district) && district.boundary_level !== "ADM0"
+  );
   const countryRows = aggregateByCountry(priorityDistricts, metric);
   const maxValue = Math.max(...countryRows.map((row) => row.value), 0);
 
@@ -684,14 +711,16 @@ function aggregateByCountry(districts, metric) {
 function districtStyle(feature) {
   const metric = metricSelect.value;
   const isPriority = isPriorityCountry(feature.properties);
+  const isCountryContext = feature.properties.boundary_level === "ADM0";
   const value = getDistrictMetric(feature.properties, metric);
 
   return {
-    color: isPriority ? "#3f2875" : "#a49da8",
-    weight: isPriority ? 1.4 : 0.7,
-    opacity: isPriority ? 0.92 : 0.45,
-    fillColor: isPriority ? colorForValue(value, metric) : "#ded8d1",
-    fillOpacity: isPriority ? 0.72 : 0.28,
+    color: isPriority && !isCountryContext ? "#3f2875" : "#a49da8",
+    weight: isCountryContext ? 1 : isPriority ? 1.4 : 0.7,
+    opacity: isCountryContext ? 0.5 : isPriority ? 0.92 : 0.45,
+    fillColor:
+      isPriority && !isCountryContext ? colorForValue(value, metric) : "#ded8d1",
+    fillOpacity: isCountryContext ? 0.12 : isPriority ? 0.72 : 0.28,
   };
 }
 
@@ -701,7 +730,7 @@ function isPriorityCountry(district) {
 
 function colorForValue(value, metric) {
   const values = allDistricts
-    .filter(isPriorityCountry)
+    .filter((district) => isPriorityCountry(district) && district.boundary_level !== "ADM0")
     .map((district) => getDistrictMetric(district, metric))
     .filter((metricValue) => Number.isFinite(metricValue))
     .sort((a, b) => a - b);
