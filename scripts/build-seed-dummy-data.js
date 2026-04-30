@@ -4,6 +4,8 @@ const path = require("path");
 const root = path.resolve(__dirname, "..");
 const inputFile = path.join(root, "optimized", "priority_adm2_simplified.geojson");
 const outputFile = path.join(root, "seed-dummy-data.sql");
+const chunksDir = path.join(root, "seed-sql-chunks");
+const chunkSize = 80;
 
 const ISO_TO_COUNTRY = {
   GHA: { slug: "ghana", name: "Ghana" },
@@ -112,10 +114,9 @@ function collectPoints(value, points) {
   value.forEach((item) => collectPoints(item, points));
 }
 
-function buildSql() {
+function createSeedRows() {
   const geojson = JSON.parse(fs.readFileSync(inputFile, "utf8"));
-  const rows = geojson.features
-    .map((feature) => {
+  return geojson.features.map((feature) => {
       const country = ISO_TO_COUNTRY[feature.properties.shapeGroup];
       const districtName = feature.properties.shapeName;
       const envelope = getEnvelope(feature);
@@ -134,9 +135,10 @@ function buildSql() {
   '${JSON.stringify(kpis).replace(/'/g, "''")}'::jsonb,
   st_multi(st_makeenvelope(${envelope.minLng}, ${envelope.minLat}, ${envelope.maxLng}, ${envelope.maxLat}, 4326))
 )`;
-    })
-    .join(",\n");
+    });
+}
 
+function getSetupSql() {
   return `create extension if not exists postgis;
 
 create table if not exists public.district_boundaries (
@@ -157,7 +159,11 @@ alter table public.district_boundaries
   add column if not exists kpis jsonb not null default '{}'::jsonb;
 
 truncate table public.district_boundaries;
+`;
+}
 
+function getInsertSql(rows) {
+  return `
 insert into public.district_boundaries (
   country_slug,
   country_name,
@@ -169,8 +175,12 @@ insert into public.district_boundaries (
   geom
 )
 values
-${rows};
+${rows.join(",\n")};
+`;
+}
 
+function getFinalizeSql() {
+  return `
 create index if not exists district_boundaries_country_idx
   on public.district_boundaries (country_slug);
 
@@ -209,5 +219,28 @@ grant select on public.district_boundaries_geojson to anon, authenticated;
 `;
 }
 
+function buildSql() {
+  const rows = createSeedRows();
+  return `${getSetupSql()}${getInsertSql(rows)}${getFinalizeSql()}`;
+}
+
+function writeChunkedSql() {
+  const rows = createSeedRows();
+  fs.rmSync(chunksDir, { recursive: true, force: true });
+  fs.mkdirSync(chunksDir, { recursive: true });
+  fs.writeFileSync(path.join(chunksDir, "01_setup.sql"), getSetupSql());
+
+  for (let index = 0; index < rows.length; index += chunkSize) {
+    const chunkNumber = String(index / chunkSize + 2).padStart(2, "0");
+    const chunkRows = rows.slice(index, index + chunkSize);
+    fs.writeFileSync(path.join(chunksDir, `${chunkNumber}_insert_rows.sql`), getInsertSql(chunkRows));
+  }
+
+  const finalNumber = String(Math.ceil(rows.length / chunkSize) + 2).padStart(2, "0");
+  fs.writeFileSync(path.join(chunksDir, `${finalNumber}_finalize.sql`), getFinalizeSql());
+}
+
 fs.writeFileSync(outputFile, buildSql());
+writeChunkedSql();
 console.log(`Wrote ${outputFile}`);
+console.log(`Wrote chunked SQL files to ${chunksDir}`);
