@@ -1,8 +1,8 @@
 # CAMFED District Boundary Map
 
-Map of CAMFED district data for Tanzania, Ghana, Malawi, Zambia, and Zimbabwe.
-It uses Leaflet to render district GeoJSON and is ready to connect to Supabase.
-It does not use OpenStreetMap tiles.
+Map of CAMFED district data for Tanzania, Ghana, Malawi, Zambia, and Zimbabwe,
+with the rest of Africa retained as geographic context. It uses Leaflet to
+render district GeoJSON from Supabase. It does not use OpenStreetMap tiles.
 
 ## Open the Map
 
@@ -14,8 +14,8 @@ node server.js
 
 Then visit `http://localhost:8080`.
 
-The published app loads district boundaries from Supabase. If you temporarily
-set `USE_LOCAL_GEOJSON` to `true` in `app.js`, the app can load
+The published app loads African district boundaries from Supabase. If you
+temporarily set `USE_LOCAL_GEOJSON` to `true` in `app.js`, the app can load
 `geoBoundariesCGAZ_ADM2.geojson` from the root folder while running locally.
 
 ## Connect Supabase

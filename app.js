@@ -5,10 +5,115 @@ const SUPABASE_BOUNDARY_VIEW = "district_boundaries_geojson";
 const DISTRICT_GEOJSON_FILE = "./geoBoundariesCGAZ_ADM2.geojson";
 const USE_LOCAL_GEOJSON = false;
 const PRIORITY_COUNTRIES = ["tanzania", "ghana", "malawi", "zambia", "zimbabwe"];
+const AFRICA_ISO3_CODES = [
+  "DZA",
+  "AGO",
+  "BEN",
+  "BWA",
+  "BFA",
+  "BDI",
+  "CPV",
+  "CMR",
+  "CAF",
+  "TCD",
+  "COM",
+  "COG",
+  "COD",
+  "CIV",
+  "DJI",
+  "EGY",
+  "GNQ",
+  "ERI",
+  "SWZ",
+  "ETH",
+  "GAB",
+  "GMB",
+  "GHA",
+  "GIN",
+  "GNB",
+  "KEN",
+  "LSO",
+  "LBR",
+  "LBY",
+  "MDG",
+  "MWI",
+  "MLI",
+  "MRT",
+  "MUS",
+  "MAR",
+  "MOZ",
+  "NAM",
+  "NER",
+  "NGA",
+  "RWA",
+  "STP",
+  "SEN",
+  "SYC",
+  "SLE",
+  "SOM",
+  "ZAF",
+  "SSD",
+  "SDN",
+  "TZA",
+  "TGO",
+  "TUN",
+  "UGA",
+  "ZMB",
+  "ZWE",
+];
 const ISO3_TO_COUNTRY = {
+  DZA: { slug: "algeria", name: "Algeria" },
+  AGO: { slug: "angola", name: "Angola" },
+  BEN: { slug: "benin", name: "Benin" },
+  BWA: { slug: "botswana", name: "Botswana" },
+  BFA: { slug: "burkina-faso", name: "Burkina Faso" },
+  BDI: { slug: "burundi", name: "Burundi" },
+  CPV: { slug: "cabo-verde", name: "Cabo Verde" },
+  CMR: { slug: "cameroon", name: "Cameroon" },
+  CAF: { slug: "central-african-republic", name: "Central African Republic" },
+  TCD: { slug: "chad", name: "Chad" },
+  COM: { slug: "comoros", name: "Comoros" },
+  COG: { slug: "congo", name: "Republic of the Congo" },
+  COD: { slug: "dr-congo", name: "Democratic Republic of the Congo" },
+  CIV: { slug: "cote-divoire", name: "Cote d'Ivoire" },
+  DJI: { slug: "djibouti", name: "Djibouti" },
+  EGY: { slug: "egypt", name: "Egypt" },
+  GNQ: { slug: "equatorial-guinea", name: "Equatorial Guinea" },
+  ERI: { slug: "eritrea", name: "Eritrea" },
+  SWZ: { slug: "eswatini", name: "Eswatini" },
+  ETH: { slug: "ethiopia", name: "Ethiopia" },
+  GAB: { slug: "gabon", name: "Gabon" },
+  GMB: { slug: "gambia", name: "The Gambia" },
   TZA: { slug: "tanzania", name: "Tanzania" },
   GHA: { slug: "ghana", name: "Ghana" },
+  GIN: { slug: "guinea", name: "Guinea" },
+  GNB: { slug: "guinea-bissau", name: "Guinea-Bissau" },
+  KEN: { slug: "kenya", name: "Kenya" },
+  LSO: { slug: "lesotho", name: "Lesotho" },
+  LBR: { slug: "liberia", name: "Liberia" },
+  LBY: { slug: "libya", name: "Libya" },
+  MDG: { slug: "madagascar", name: "Madagascar" },
   MWI: { slug: "malawi", name: "Malawi" },
+  MLI: { slug: "mali", name: "Mali" },
+  MRT: { slug: "mauritania", name: "Mauritania" },
+  MUS: { slug: "mauritius", name: "Mauritius" },
+  MAR: { slug: "morocco", name: "Morocco" },
+  MOZ: { slug: "mozambique", name: "Mozambique" },
+  NAM: { slug: "namibia", name: "Namibia" },
+  NER: { slug: "niger", name: "Niger" },
+  NGA: { slug: "nigeria", name: "Nigeria" },
+  RWA: { slug: "rwanda", name: "Rwanda" },
+  STP: { slug: "sao-tome-and-principe", name: "Sao Tome and Principe" },
+  SEN: { slug: "senegal", name: "Senegal" },
+  SYC: { slug: "seychelles", name: "Seychelles" },
+  SLE: { slug: "sierra-leone", name: "Sierra Leone" },
+  SOM: { slug: "somalia", name: "Somalia" },
+  ZAF: { slug: "south-africa", name: "South Africa" },
+  SSD: { slug: "south-sudan", name: "South Sudan" },
+  SDN: { slug: "sudan", name: "Sudan" },
+  TGO: { slug: "togo", name: "Togo" },
+  TUN: { slug: "tunisia", name: "Tunisia" },
+  UGA: { slug: "uganda", name: "Uganda" },
   ZMB: { slug: "zambia", name: "Zambia" },
   ZWE: { slug: "zimbabwe", name: "Zimbabwe" },
 };
@@ -162,8 +267,7 @@ async function loadDistricts() {
     .from(SUPABASE_BOUNDARY_VIEW)
     .select(
       "id,country_slug,country_name,district_name,program_count,beneficiary_count,risk_score,geometry"
-    )
-    .in("country_slug", PRIORITY_COUNTRIES);
+    );
 
   if (error) {
     console.error(error);
@@ -186,7 +290,7 @@ async function loadLocalDistrictGeojson() {
 
   const geojson = await response.json();
   const districts = geojson.features
-    .filter((feature) => ISO3_TO_COUNTRY[feature.properties.shapeGroup])
+    .filter((feature) => AFRICA_ISO3_CODES.includes(feature.properties.shapeGroup))
     .map(normalizeGeoBoundaryFeature);
 
   setStatus(`Loaded ${districts.length} local district boundaries.`);
@@ -224,8 +328,12 @@ function renderDistricts() {
   const searchTerm = districtSearch.value.trim().toLowerCase();
   const filtered = allDistricts.filter((district) => {
     const countryMatch =
-      selectedCountry === "all" || district.country_slug === selectedCountry;
-    const districtMatch = district.district_name.toLowerCase().includes(searchTerm);
+      selectedCountry === "all" ||
+      district.country_slug === selectedCountry ||
+      !isPriorityCountry(district);
+    const districtMatch =
+      !isPriorityCountry(district) ||
+      district.district_name.toLowerCase().includes(searchTerm);
     return countryMatch && districtMatch;
   });
 
@@ -256,15 +364,20 @@ function renderDistricts() {
 
 function districtStyle(feature) {
   const metric = metricSelect.value;
+  const isPriority = isPriorityCountry(feature.properties);
   const value = Number(feature.properties[metric] || 0);
 
   return {
-    color: "#17324d",
-    weight: 1.4,
-    opacity: 0.92,
-    fillColor: colorForValue(value, metric),
-    fillOpacity: 0.72,
+    color: isPriority ? "#17324d" : "#8b979f",
+    weight: isPriority ? 1.4 : 0.7,
+    opacity: isPriority ? 0.92 : 0.45,
+    fillColor: isPriority ? colorForValue(value, metric) : "#d7dfdd",
+    fillOpacity: isPriority ? 0.72 : 0.28,
   };
+}
+
+function isPriorityCountry(district) {
+  return PRIORITY_COUNTRIES.includes(district.country_slug);
 }
 
 function colorForValue(value, metric) {
