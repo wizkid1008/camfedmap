@@ -411,6 +411,7 @@ let countryOptions = [];
 let districtOptions = [];
 let selectedCountries = new Set();
 let selectedDistricts = new Set();
+let districtSelectionMode = "all";
 let loadedKpiRowCount = 0;
 
 populateKpiOptions();
@@ -568,6 +569,7 @@ function getDistrictKey(district) {
 function initializeSlicers() {
   countryOptions = getCountryOptions();
   selectedCountries = new Set(countryOptions.map((country) => country.slug));
+  districtSelectionMode = "all";
   refreshDistrictOptions();
   renderCountryList();
   renderDistrictList();
@@ -582,6 +584,7 @@ function initializePlaceholderSlicers() {
   selectedCountries = new Set(countryOptions.map((country) => country.slug));
   districtOptions = [];
   selectedDistricts = new Set();
+  districtSelectionMode = "all";
   renderCountryList();
   renderDistrictList();
   updateSlicerCounts();
@@ -608,6 +611,7 @@ function getCountryNameFromSlug(slug) {
 }
 
 function refreshDistrictOptions() {
+  const previousSelectedDistricts = new Set(selectedDistricts);
   const districts = new Map();
 
   allDistricts
@@ -628,15 +632,16 @@ function refreshDistrictOptions() {
     return countryCompare || a.name.localeCompare(b.name);
   });
 
+  if (districtSelectionMode === "all") {
+    selectedDistricts = new Set(districtOptions.map((district) => district.key));
+    return;
+  }
+
   selectedDistricts = new Set(
     districtOptions
-      .filter((district) => selectedDistricts.size === 0 || selectedDistricts.has(district.key))
+      .filter((district) => previousSelectedDistricts.has(district.key))
       .map((district) => district.key)
   );
-
-  if (selectedDistricts.size === 0 && districtOptions.length > 0) {
-    selectedDistricts = new Set(districtOptions.map((district) => district.key));
-  }
 }
 
 function renderCountryList() {
@@ -1031,8 +1036,8 @@ document.addEventListener("click", (event) => {
 });
 countryAll.addEventListener("click", () => {
   selectedCountries = new Set(countryOptions.map((country) => country.slug));
+  districtSelectionMode = "all";
   refreshDistrictOptions();
-  selectedDistricts = new Set(districtOptions.map((district) => district.key));
   renderCountryList();
   renderDistrictList();
   updateSlicerCounts();
@@ -1041,6 +1046,7 @@ countryAll.addEventListener("click", () => {
 countryNone.addEventListener("click", () => {
   selectedCountries = new Set();
   selectedDistricts = new Set();
+  districtSelectionMode = "none";
   refreshDistrictOptions();
   renderCountryList();
   renderDistrictList();
@@ -1048,12 +1054,14 @@ countryNone.addEventListener("click", () => {
   renderDistricts();
 });
 districtAll.addEventListener("click", () => {
+  districtSelectionMode = "all";
   selectedDistricts = new Set(districtOptions.map((district) => district.key));
   renderDistrictList();
   updateSlicerCounts();
   renderDistricts();
 });
 districtNone.addEventListener("click", () => {
+  districtSelectionMode = "none";
   selectedDistricts = new Set();
   renderDistrictList();
   updateSlicerCounts();
@@ -1068,6 +1076,7 @@ countryList.addEventListener("change", (event) => {
     selectedCountries.delete(event.target.value);
   }
 
+  districtSelectionMode = "all";
   refreshDistrictOptions();
   renderCountryList();
   renderDistrictList();
@@ -1082,6 +1091,8 @@ districtList.addEventListener("change", (event) => {
   } else {
     selectedDistricts.delete(event.target.value);
   }
+  districtSelectionMode =
+    selectedDistricts.size === districtOptions.length ? "all" : "custom";
 
   renderDistrictList();
   updateSlicerCounts();
