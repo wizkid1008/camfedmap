@@ -3,6 +3,9 @@ const SUPABASE_ANON_KEY = "sb_publishable_MFmdnO0fxCH-TASV_o77FQ_XeO8SoAk";
 const SUPABASE_BOUNDARY_VIEW = "district_boundaries_geojson";
 
 const DISTRICT_GEOJSON_FILE = "./geoBoundariesCGAZ_ADM2.geojson";
+const SUPABASE_STORAGE_GEOJSON_URL =
+  "https://qlvayqyihfixikfqfelu.supabase.co/storage/v1/object/public/MapShapes/geoBoundariesCGAZ_ADM2.geojson";
+const BOUNDARY_SOURCE = "storage";
 const USE_LOCAL_GEOJSON = false;
 const PRIORITY_COUNTRIES = ["tanzania", "ghana", "malawi", "zambia", "zimbabwe"];
 const KPI_DEFINITIONS = [
@@ -400,6 +403,10 @@ function getSupabaseClient() {
 }
 
 async function loadDistricts() {
+  if (BOUNDARY_SOURCE === "storage") {
+    return loadStorageDistrictGeojson();
+  }
+
   if (USE_LOCAL_GEOJSON) {
     return loadLocalDistrictGeojson();
   }
@@ -430,6 +437,94 @@ async function loadDistricts() {
       : "Supabase connected, but no boundary rows were returned."
   );
   return districts;
+}
+
+async function loadStorageDistrictGeojson() {
+  setStatus("Loading ADM2 boundaries from Supabase Storage...");
+
+  const [geojsonResponse, kpiRows] = await Promise.all([
+    fetch(SUPABASE_STORAGE_GEOJSON_URL),
+    loadSupabaseKpiRows(),
+  ]);
+
+  if (!geojsonResponse.ok) {
+    throw new Error(`Could not load ${SUPABASE_STORAGE_GEOJSON_URL}`);
+  }
+
+  const geojson = await geojsonResponse.json();
+  const kpisByDistrict = indexKpiRows(kpiRows);
+  const districts = geojson.features
+    .filter((feature) => AFRICA_ISO3_CODES.includes(feature.properties.shapeGroup))
+    .map((feature) => {
+      const district = normalizeGeoBoundaryFeature(feature);
+      return {
+        ...district,
+        ...getMergedKpiValues(district, kpisByDistrict),
+      };
+    });
+
+  setStatus(
+    `Loaded ${districts.length} African district boundaries from Supabase Storage.`
+  );
+  return districts;
+}
+
+async function loadSupabaseKpiRows() {
+  const client = getSupabaseClient();
+
+  if (!client) {
+    return [];
+  }
+
+  const { data, error } = await client
+    .from(SUPABASE_BOUNDARY_VIEW)
+    .select(
+      "id,country_slug,country_name,district_name,program_count,beneficiary_count,risk_score,kpis"
+    );
+
+  if (error) {
+    console.warn("KPI rows could not be loaded from Supabase.", error);
+    return [];
+  }
+
+  return data.map((row) => ({
+    ...row,
+    kpis: normalizeKpis(row.kpis),
+  }));
+}
+
+function indexKpiRows(rows) {
+  const index = new Map();
+
+  rows.forEach((row) => {
+    index.set(getDistrictKey(row), row);
+  });
+
+  return index;
+}
+
+function getMergedKpiValues(district, kpisByDistrict) {
+  const row = kpisByDistrict.get(getDistrictKey(district));
+
+  if (!row) {
+    return {
+      program_count: 0,
+      beneficiary_count: 0,
+      risk_score: 0,
+      kpis: {},
+    };
+  }
+
+  return {
+    program_count: Number(row.program_count || 0),
+    beneficiary_count: Number(row.beneficiary_count || 0),
+    risk_score: Number(row.risk_score || 0),
+    kpis: row.kpis || {},
+  };
+}
+
+function getDistrictKey(district) {
+  return `${district.country_slug}::${district.district_name}`.toLowerCase();
 }
 
 async function loadLocalDistrictGeojson() {

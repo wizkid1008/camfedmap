@@ -14,9 +14,9 @@ node server.js
 
 Then visit `http://localhost:8080`.
 
-The published app loads African district boundaries from Supabase. If you
-temporarily set `USE_LOCAL_GEOJSON` to `true` in `app.js`, the app can load
-`geoBoundariesCGAZ_ADM2.geojson` from the root folder while running locally.
+The published app loads African ADM2 district boundaries directly from the
+public Supabase Storage file in the `MapShapes` bucket. It can also read KPI
+values from `district_boundaries_geojson` when matching district rows exist.
 
 ## Connect Supabase
 
