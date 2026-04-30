@@ -101,10 +101,81 @@ input:focus {
   outline: none;
 }
 
+.chart-panel,
 .legend,
 .status-panel {
   padding-top: 18px;
   border-top: 1px solid var(--line);
+}
+
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.section-heading h2 {
+  margin-bottom: 0;
+}
+
+.section-heading span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.bar-chart {
+  display: grid;
+  gap: 12px;
+}
+
+.bar-row {
+  display: grid;
+  gap: 6px;
+}
+
+.bar-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.88rem;
+}
+
+.bar-meta span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar-meta strong {
+  color: var(--accent-dark);
+  font-size: 0.84rem;
+}
+
+.bar-track {
+  height: 9px;
+  overflow: hidden;
+  background: #e7ecee;
+  border-radius: 999px;
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #41b6c4, #225ea8);
+  border-radius: inherit;
+}
+
+.empty-chart {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .legend-row {

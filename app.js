@@ -236,6 +236,9 @@ const countrySelect = document.querySelector("#countrySelect");
 const districtSearch = document.querySelector("#districtSearch");
 const metricSelect = document.querySelector("#metricSelect");
 const statusText = document.querySelector("#statusText");
+const chartTitle = document.querySelector("#chartTitle");
+const chartMetricLabel = document.querySelector("#chartMetricLabel");
+const countryChart = document.querySelector("#countryChart");
 
 let allDistricts = [];
 let boundaryLayer;
@@ -359,7 +362,63 @@ function renderDistricts() {
     map.fitBounds(boundaryLayer.getBounds(), { padding: [28, 28] });
   }
 
+  renderCountryChart(filtered);
   setStatus(`Showing ${filtered.length} district${filtered.length === 1 ? "" : "s"}.`);
+}
+
+function renderCountryChart(districts) {
+  const metric = metricSelect.value;
+  const priorityDistricts = districts.filter(isPriorityCountry);
+  const countryRows = aggregateByCountry(priorityDistricts, metric);
+  const maxValue = Math.max(...countryRows.map((row) => row.value), 0);
+
+  chartTitle.textContent =
+    countrySelect.value === "all" ? "Priority Countries" : "Selected Country";
+  chartMetricLabel.textContent = getMetricLabel(metric);
+  countryChart.innerHTML = "";
+
+  if (countryRows.length === 0) {
+    countryChart.innerHTML = `<p class="empty-chart">No matching priority districts.</p>`;
+    return;
+  }
+
+  countryRows.forEach((row) => {
+    const barWidth = maxValue > 0 ? Math.max((row.value / maxValue) * 100, 4) : 4;
+    const item = document.createElement("div");
+    item.className = "bar-row";
+    item.innerHTML = `
+      <div class="bar-meta">
+        <span>${escapeHtml(row.country_name)}</span>
+        <strong>${formatMetric(row.value, metric)}</strong>
+      </div>
+      <div class="bar-track" aria-hidden="true">
+        <span class="bar-fill" style="width: ${barWidth}%"></span>
+      </div>
+    `;
+    countryChart.appendChild(item);
+  });
+}
+
+function aggregateByCountry(districts, metric) {
+  const grouped = new Map();
+
+  districts.forEach((district) => {
+    const current = grouped.get(district.country_slug) || {
+      country_name: district.country_name,
+      total: 0,
+      count: 0,
+    };
+    current.total += Number(district[metric] || 0);
+    current.count += 1;
+    grouped.set(district.country_slug, current);
+  });
+
+  return Array.from(grouped.values())
+    .map((row) => ({
+      country_name: row.country_name,
+      value: metric === "risk_score" && row.count > 0 ? row.total / row.count : row.total,
+    }))
+    .sort((a, b) => b.value - a.value);
 }
 
 function districtStyle(feature) {
@@ -413,6 +472,18 @@ function setStatus(message) {
 
 function formatNumber(value) {
   return new Intl.NumberFormat().format(Number(value || 0));
+}
+
+function formatMetric(value, metric) {
+  if (metric === "risk_score") {
+    return Number(value || 0).toFixed(1);
+  }
+
+  return formatNumber(value);
+}
+
+function getMetricLabel(metric) {
+  return metricSelect.querySelector(`option[value="${metric}"]`).textContent;
 }
 
 function escapeHtml(value) {
