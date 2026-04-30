@@ -399,12 +399,15 @@ const districtList = document.querySelector("#districtList");
 const districtAll = document.querySelector("#districtAll");
 const districtNone = document.querySelector("#districtNone");
 const metricSelect = document.querySelector("#metricSelect");
-const yearSelect = document.querySelector("#yearSelect");
+const yearStart = document.querySelector("#yearStart");
+const yearEnd = document.querySelector("#yearEnd");
+const yearRangeText = document.querySelector("#yearRangeText");
 const statusText = document.querySelector("#statusText");
 const chartTitle = document.querySelector("#chartTitle");
 const chartMetricLabel = document.querySelector("#chartMetricLabel");
 const countryChart = document.querySelector("#countryChart");
 const mapEmpty = document.querySelector("#mapEmpty");
+const legendTitle = document.querySelector("#legendTitle");
 const legendSubtitle = document.querySelector("#legendSubtitle");
 const legendRows = document.querySelector("#legendRows");
 
@@ -420,7 +423,7 @@ let districtSelectionMode = "all";
 let loadedKpiRowCount = 0;
 
 populateKpiOptions();
-populateYearOptions();
+initializeYearRange();
 initializePlaceholderSlicers();
 
 function getSupabaseClient() {
@@ -946,9 +949,10 @@ function getMaxMetricValue(metric, districts) {
 function renderLegend(districts) {
   const metric = metricSelect.value;
   const label = getMetricLabel(metric);
-  const year = yearSelect.value;
+  const yearLabel = getYearRangeLabel();
   const max = getMaxMetricValue(metric, districts);
-  legendSubtitle.textContent = `${label} - ${year}`;
+  legendTitle.textContent = label;
+  legendSubtitle.textContent = yearLabel;
 
   if (max <= 0) {
     legendRows.innerHTML = `
@@ -1019,12 +1023,20 @@ function getMetricLabel(metric) {
 }
 
 function getDistrictMetric(district, metric) {
-  const year = yearSelect.value;
-  const value = getRawDistrictMetric(district, metric, year);
+  const selectedYears = getSelectedYears();
+  const yearlyValues = selectedYears
+    .map((year) => getRawDistrictMetric(district, metric, year, { yearlyOnly: true }))
+    .filter((value) => value !== undefined && value !== null);
+
+  if (yearlyValues.length > 0) {
+    return yearlyValues.reduce((total, value) => total + Number(value || 0), 0);
+  }
+
+  const value = getRawDistrictMetric(district, metric, selectedYears[0], { yearlyOnly: false });
   return Number(value || 0);
 }
 
-function getRawDistrictMetric(district, metric, year) {
+function getRawDistrictMetric(district, metric, year, options = {}) {
   if (!district.kpis) {
     return district[metric];
   }
@@ -1035,6 +1047,10 @@ function getRawDistrictMetric(district, metric, year) {
 
   if (district.kpis[year] && district.kpis[year][metric] !== undefined) {
     return district.kpis[year][metric];
+  }
+
+  if (options.yearlyOnly) {
+    return undefined;
   }
 
   if (Object.hasOwn(district.kpis, metric)) {
@@ -1050,25 +1066,54 @@ function populateKpiOptions() {
   ).join("");
 }
 
-function populateYearOptions() {
-  yearSelect.innerHTML = YEARS.map(
-    (year) => `<option value="${year}" ${year === 2025 ? "selected" : ""}>${year}</option>`
-  ).join("");
+function initializeYearRange() {
+  yearStart.min = YEARS[0];
+  yearStart.max = YEARS[YEARS.length - 1];
+  yearEnd.min = YEARS[0];
+  yearEnd.max = YEARS[YEARS.length - 1];
+  yearStart.value = YEARS[0];
+  yearEnd.value = YEARS[YEARS.length - 1];
+  updateYearRangeText();
+}
+
+function getSelectedYearBounds() {
+  const start = Number(yearStart.value);
+  const end = Number(yearEnd.value);
+  return {
+    start: Math.min(start, end),
+    end: Math.max(start, end),
+  };
+}
+
+function getSelectedYears() {
+  const { start, end } = getSelectedYearBounds();
+  return YEARS.filter((year) => year >= start && year <= end).map(String);
+}
+
+function getYearRangeLabel() {
+  const { start, end } = getSelectedYearBounds();
+  return start === end ? String(start) : `${start} - ${end}`;
+}
+
+function updateYearRangeText() {
+  yearRangeText.textContent = getYearRangeLabel();
 }
 
 function getKpiAvailabilityMessage(districts) {
   const metric = metricSelect.value;
-  const year = yearSelect.value;
+  const yearLabel = getYearRangeLabel();
   const matchingValues = districts
     .filter((district) => isPriorityCountry(district) && district.boundary_level !== "ADM0")
-    .map((district) => getRawDistrictMetric(district, metric, year))
+    .map((district) => getDistrictMetric(district, metric))
     .filter((value) => value !== undefined && value !== null);
 
   if (matchingValues.length === 0) {
-    return `No KPI values found for ${getMetricLabel(metric)} in ${year}.`;
+    return `No KPI values found for ${getMetricLabel(metric)} in ${yearLabel}.`;
   }
 
-  return `${matchingValues.length} KPI value${matchingValues.length === 1 ? "" : "s"} found for ${year}.`;
+  return `${matchingValues.length} KPI value${
+    matchingValues.length === 1 ? "" : "s"
+  } found for ${yearLabel}.`;
 }
 
 function escapeHtml(value) {
@@ -1087,7 +1132,14 @@ function escapeHtml(value) {
 countrySearch.addEventListener("input", renderCountryList);
 districtSearch.addEventListener("input", renderDistrictList);
 metricSelect.addEventListener("change", renderDistricts);
-yearSelect.addEventListener("change", renderDistricts);
+yearStart.addEventListener("input", () => {
+  updateYearRangeText();
+  renderDistricts();
+});
+yearEnd.addEventListener("input", () => {
+  updateYearRangeText();
+  renderDistricts();
+});
 countryToggle.addEventListener("click", () => toggleMenu(countryMenu, districtMenu));
 districtToggle.addEventListener("click", () => toggleMenu(districtMenu, countryMenu));
 document.addEventListener("click", (event) => {

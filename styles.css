@@ -107,7 +107,7 @@ body {
   display: grid;
   grid-template-columns:
     minmax(210px, 0.8fr) minmax(260px, 1fr) minmax(300px, 1.1fr)
-    minmax(150px, 0.5fr);
+    minmax(280px, 0.75fr);
   align-items: start;
   gap: 22px;
   padding: 18px 30px;
@@ -184,14 +184,70 @@ h2 {
   cursor: pointer;
 }
 
-.kpi-control select,
-.year-control select {
+.kpi-control select {
   min-width: 320px;
   border-color: var(--line);
 }
 
-.year-control select {
-  min-width: 130px;
+.year-range-widget {
+  display: grid;
+  gap: 7px;
+  min-width: 270px;
+}
+
+.year-range-widget strong {
+  color: var(--accent-dark);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.range-slider {
+  position: relative;
+  height: 18px;
+}
+
+.range-slider::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #ded8d1;
+  border-radius: 999px;
+}
+
+.range-slider input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  min-height: 18px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  pointer-events: none;
+  appearance: none;
+}
+
+.range-slider input::-webkit-slider-thumb {
+  width: 20px;
+  height: 20px;
+  background: var(--accent-dark);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(28, 18, 48, 0.24);
+  pointer-events: auto;
+  appearance: none;
+}
+
+.range-slider input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--accent-dark);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(28, 18, 48, 0.24);
+  pointer-events: auto;
 }
 
 .chevron {
@@ -326,7 +382,7 @@ input:focus {
 .panel-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.65fr);
-  gap: 20px;
+  gap: 18px;
   margin-top: 0;
 }
 
@@ -357,8 +413,8 @@ input:focus {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 54px;
-  padding: 0 18px;
+  min-height: 50px;
+  padding: 0 16px;
   background: var(--panel);
   border-bottom: 1px solid var(--line);
 }
@@ -398,13 +454,13 @@ input:focus {
 
 .bar-chart {
   display: grid;
-  gap: 12px;
-  padding: 20px;
+  gap: 9px;
+  padding: 16px 18px 14px;
 }
 
 .bar-row {
   display: grid;
-  gap: 6px;
+  gap: 5px;
 }
 
 .bar-meta {
@@ -430,7 +486,7 @@ input:focus {
 }
 
 .bar-track {
-  height: 9px;
+  height: 8px;
   overflow: hidden;
   background: #e7ecee;
   border-radius: 999px;
@@ -451,57 +507,71 @@ input:focus {
 
 .legend-row {
   display: grid;
-  grid-template-columns: 28px 68px minmax(0, 1fr);
+  grid-template-columns: 24px 62px minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
-  min-height: 38px;
-  padding: 8px 10px;
+  gap: 9px;
+  min-height: 32px;
+  padding: 6px 8px;
   color: var(--ink);
   background: #fbfaf8;
   border: 1px solid #eee8e2;
   border-radius: 9px;
-  font-size: 0.86rem;
+  font-size: 0.8rem;
 }
 
 .swatch {
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
   border: 1px solid rgba(23, 32, 38, 0.16);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 .legend-rows {
   display: grid;
-  gap: 8px;
-  margin-top: 14px;
+  gap: 6px;
+  margin-top: 10px;
 }
 
 .chart-legend {
-  margin: 0 20px 20px;
-  padding: 18px;
-  background:
-    linear-gradient(180deg, rgba(239, 232, 248, 0.62), rgba(255, 255, 255, 0.96)),
-    #fff;
+  margin: 0 18px 16px;
+  padding: 0 14px 14px;
+  overflow: hidden;
+  background: #fff;
   border: 1px solid #e7dfef;
   border-radius: 12px;
 }
 
-.chart-legend h2 {
-  margin: 0;
-  color: var(--aubergine);
-  font-size: 1rem;
+.legend-titlebar {
+  display: grid;
+  gap: 3px;
+  margin: 0 -14px 12px;
+  padding: 12px 14px;
+  background: linear-gradient(90deg, rgba(239, 232, 248, 0.86), rgba(250, 247, 253, 0.96));
+  border-bottom: 1px solid #e7dfef;
   text-align: center;
 }
 
-.chart-legend p {
-  max-width: 92%;
-  margin: 6px auto 0;
+.legend-titlebar span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.chart-legend h2 {
+  margin: 0;
   color: var(--accent-dark);
-  font-size: 0.82rem;
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+
+.chart-legend p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
   font-weight: 800;
-  line-height: 1.35;
-  text-align: center;
 }
 
 .legend-level {
@@ -528,17 +598,18 @@ input:focus {
 }
 
 #statusText {
-  margin: 12px 18px 18px;
+  margin: 12px 16px 16px;
   color: var(--muted);
   line-height: 1.45;
 }
 
 #map {
-  height: 610px;
+  height: 560px;
   overflow: hidden;
   border-radius: 0 0 14px 14px;
   position: relative;
   z-index: 1;
+  clip-path: inset(0 round 0 0 14px 14px);
 }
 
 #map {
@@ -552,6 +623,12 @@ input:focus {
 
 #map.leaflet-container {
   overflow: hidden;
+}
+
+#map .leaflet-pane,
+#map .leaflet-top,
+#map .leaflet-bottom {
+  z-index: 1;
 }
 
 .map-empty {
