@@ -188,7 +188,9 @@ create index if not exists district_boundaries_geom_idx
   on public.district_boundaries
   using gist (geom);
 
-create or replace view public.district_boundaries_geojson
+drop view if exists public.district_boundaries_geojson;
+
+create view public.district_boundaries_geojson
 with (security_invoker = true) as
 select
   id,
