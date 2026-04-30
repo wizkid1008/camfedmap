@@ -967,17 +967,31 @@ function renderLegend(districts) {
     const level = index + 1;
     const start = (max * index) / 5;
     const end = (max * level) / 5;
+    const rangeLabel = getLegendRangeLabel(start, end, level);
     return `
       <div class="legend-row">
         <span class="swatch" style="background: ${color}"></span>
         <span class="legend-level">Level ${level}</span>
-        <span class="legend-range">${formatMetric(start, metric)} - ${formatMetric(
-          end,
-          metric
-        )}</span>
+        <span class="legend-range">${rangeLabel}</span>
       </div>
     `;
   }).join("");
+}
+
+function getLegendRangeLabel(start, end, level) {
+  const roundedStart = formatRoundedLegendNumber(start);
+  const roundedEnd = formatRoundedLegendNumber(end);
+
+  if (level === 1) {
+    return `0 - <=${roundedEnd}`;
+  }
+
+  return `>${roundedStart} - <=${roundedEnd}`;
+}
+
+function formatRoundedLegendNumber(value) {
+  const rounded = Math.round(Number(value || 0) / 100) * 100;
+  return formatNumber(rounded);
 }
 
 function bindDistrictPopup(feature, layer) {
