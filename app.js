@@ -3,10 +3,12 @@ const SUPABASE_ANON_KEY = "sb_publishable_MFmdnO0fxCH-TASV_o77FQ_XeO8SoAk";
 const SUPABASE_BOUNDARY_VIEW = "district_boundaries_geojson";
 
 const DISTRICT_GEOJSON_FILE = "./geoBoundariesCGAZ_ADM2.geojson";
+const SUPABASE_STORAGE_ADM0_OPTIMIZED_URL =
+  "https://qlvayqyihfixikfqfelu.supabase.co/storage/v1/object/public/MapShapes/africa_adm0_simplified.geojson";
+const SUPABASE_STORAGE_ADM2_OPTIMIZED_URL =
+  "https://qlvayqyihfixikfqfelu.supabase.co/storage/v1/object/public/MapShapes/priority_adm2_simplified.geojson";
 const SUPABASE_STORAGE_ADM0_URL =
   "https://qlvayqyihfixikfqfelu.supabase.co/storage/v1/object/public/MapShapes/geoBoundariesCGAZ_ADM0.geojson";
-const SUPABASE_STORAGE_ADM1_URL =
-  "https://qlvayqyihfixikfqfelu.supabase.co/storage/v1/object/public/MapShapes/geoBoundariesCGAZ_ADM1.geojson";
 const SUPABASE_STORAGE_ADM2_URL =
   "https://qlvayqyihfixikfqfelu.supabase.co/storage/v1/object/public/MapShapes/geoBoundariesCGAZ_ADM2.geojson";
 const BOUNDARY_SOURCE = "storage";
@@ -469,33 +471,25 @@ async function loadDistricts() {
 }
 
 async function loadStorageDistrictGeojson() {
-  setStatus("Loading African country and region boundaries from Supabase Storage...");
+  setStatus("Loading optimized African country and district boundaries from Supabase Storage...");
 
-  const [adm0Response, adm1Response, kpiRows] = await Promise.all([
-    fetch(SUPABASE_STORAGE_ADM0_URL),
-    fetch(SUPABASE_STORAGE_ADM1_URL),
+  const [adm0Geojson, adm2Geojson, kpiRows] = await Promise.all([
+    fetchGeojsonWithFallback(SUPABASE_STORAGE_ADM0_OPTIMIZED_URL, SUPABASE_STORAGE_ADM0_URL),
+    fetchGeojsonWithFallback(SUPABASE_STORAGE_ADM2_OPTIMIZED_URL, SUPABASE_STORAGE_ADM2_URL),
     loadSupabaseKpiRows(),
   ]);
   loadedKpiRowCount = kpiRows.length;
 
-  if (!adm0Response.ok) {
-    throw new Error(`Could not load ${SUPABASE_STORAGE_ADM0_URL}`);
-  }
-
-  if (!adm1Response.ok) {
-    throw new Error(`Could not load ${SUPABASE_STORAGE_ADM1_URL}`);
-  }
-
-  const [adm0Geojson, adm1Geojson] = await Promise.all([
-    adm0Response.json(),
-    adm1Response.json(),
-  ]);
   const kpisByDistrict = indexKpiRows(kpiRows);
   const countryContext = adm0Geojson.features
     .filter((feature) => AFRICA_ISO3_CODES.includes(feature.properties.shapeGroup))
     .map(normalizeStorageFeature);
-  const regions = adm1Geojson.features
+  const districts = adm2Geojson.features
     .filter((feature) => AFRICA_ISO3_CODES.includes(feature.properties.shapeGroup))
+    .filter((feature) => {
+      const country = ISO3_TO_COUNTRY[feature.properties.shapeGroup];
+      return country && PRIORITY_COUNTRIES.includes(country.slug);
+    })
     .map((feature) => {
       const district = normalizeStorageFeature(feature);
       return {
@@ -503,12 +497,29 @@ async function loadStorageDistrictGeojson() {
         ...getMergedKpiValues(district, kpisByDistrict),
       };
     });
-  const districts = [...countryContext, ...regions];
+  const boundaries = [...countryContext, ...districts];
 
   setStatus(
-    `Loaded ${countryContext.length} countries and ${regions.length} regions from Supabase Storage.`
+    `Loaded ${countryContext.length} countries and ${districts.length} districts from Supabase Storage.`
   );
-  return districts;
+  return boundaries;
+}
+
+async function fetchGeojsonWithFallback(primaryUrl, fallbackUrl) {
+  const primaryResponse = await fetch(primaryUrl);
+
+  if (primaryResponse.ok) {
+    return primaryResponse.json();
+  }
+
+  console.warn(`Optimized GeoJSON was not available. Falling back to ${fallbackUrl}`);
+  const fallbackResponse = await fetch(fallbackUrl);
+
+  if (!fallbackResponse.ok) {
+    throw new Error(`Could not load ${primaryUrl} or ${fallbackUrl}`);
+  }
+
+  return fallbackResponse.json();
 }
 
 async function loadSupabaseKpiRows() {
