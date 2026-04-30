@@ -486,16 +486,10 @@ input:focus {
   border: 1px solid rgba(23, 32, 38, 0.16);
 }
 
-.swatch.low {
-  background: #d9d1e9;
-}
-
-.swatch.mid {
-  background: var(--gold);
-}
-
-.swatch.high {
-  background: #6b22aa;
+.legend-rows {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
 }
 
 #statusText {

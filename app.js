@@ -401,6 +401,9 @@ const chartTitle = document.querySelector("#chartTitle");
 const chartMetricLabel = document.querySelector("#chartMetricLabel");
 const countryChart = document.querySelector("#countryChart");
 const mapEmpty = document.querySelector("#mapEmpty");
+const legendRows = document.querySelector("#legendRows");
+
+const LEVEL_COLORS = ["#e7e0f0", "#c9bbdd", "#b78f2f", "#b5533d", "#6b22aa"];
 
 let allDistricts = [];
 let boundaryLayer;
@@ -801,6 +804,7 @@ function renderDistricts() {
   updateMapEmptyState(filtered.length);
   map.invalidateSize();
   renderCountryChart(filtered);
+  renderLegend(filtered);
   setStatus(
     allDistricts.length === 0
       ? "Supabase connected, but no boundary rows were returned."
@@ -892,35 +896,80 @@ function isPriorityCountry(district) {
 }
 
 function colorForValue(value, metric) {
-  const max = Math.max(
-    ...allDistricts
+  const max = getMaxMetricValue(metric, allDistricts);
+  if (max <= 0) return "#d9d1e9";
+
+  return LEVEL_COLORS[getMetricLevel(value, max) - 1];
+}
+
+function getMetricLevel(value, max) {
+  if (max <= 0) return 1;
+
+  const ratio = value / max;
+  if (ratio < 0.2) return 1;
+  if (ratio < 0.4) return 2;
+  if (ratio < 0.6) return 3;
+  if (ratio < 0.8) return 4;
+  return 5;
+}
+
+function getMaxMetricValue(metric, districts) {
+  return Math.max(
+    ...districts
       .filter((district) => isPriorityCountry(district) && district.boundary_level !== "ADM0")
       .map((district) => getDistrictMetric(district, metric))
       .filter((metricValue) => Number.isFinite(metricValue)),
     0
   );
+}
 
-  if (max <= 0) return "#d9d1e9";
+function renderLegend(districts) {
+  const metric = metricSelect.value;
+  const label = getMetricLabel(metric);
+  const max = getMaxMetricValue(metric, districts);
 
-  const ratio = value / max;
-  if (ratio < 0.5) return "#d9d1e9";
-  if (ratio >= 0.75) return "#6b22aa";
-  return "#b78f2f";
+  if (max <= 0) {
+    legendRows.innerHTML = `<div class="legend-row"><span class="swatch level-1"></span>No ${escapeHtml(
+      label
+    )} values loaded</div>`;
+    return;
+  }
+
+  legendRows.innerHTML = LEVEL_COLORS.map((color, index) => {
+    const level = index + 1;
+    const start = (max * index) / 5;
+    const end = (max * level) / 5;
+    return `
+      <div class="legend-row">
+        <span class="swatch" style="background: ${color}"></span>
+        <span>Level ${level}: ${formatMetric(start, metric)}-${formatMetric(end, metric)} ${escapeHtml(
+          label
+        )}</span>
+      </div>
+    `;
+  }).join("");
 }
 
 function bindDistrictPopup(feature, layer) {
   const district = feature.properties;
   const metric = metricSelect.value;
+  const value = getDistrictMetric(district, metric);
   layer.bindPopup(`
     <div class="district-popup">
       <strong>${escapeHtml(district.district_name)}, ${escapeHtml(district.country_name)}</strong>
       <dl>
-        <dt>${escapeHtml(getMetricLabel(metric))}</dt><dd>${formatMetric(getDistrictMetric(district, metric), metric)}</dd>
+        <dt>${escapeHtml(getMetricLabel(metric))}</dt><dd>${formatMetric(value, metric)}</dd>
         <dt>Programs</dt><dd>${formatNumber(district.program_count)}</dd>
         <dt>Beneficiaries</dt><dd>${formatNumber(district.beneficiary_count)}</dd>
       </dl>
     </div>
   `);
+  layer.bindTooltip(
+    `${escapeHtml(district.district_name)}: ${formatMetric(value, metric)} ${escapeHtml(
+      getMetricLabel(metric)
+    )}`,
+    { sticky: true }
+  );
 }
 
 function setStatus(message) {
