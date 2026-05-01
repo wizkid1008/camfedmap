@@ -97,24 +97,24 @@
             </div>
           </div>
 
-          <div class="filter-control slicer layer-control" aria-label="Data coloring controls">
-            <span class="filter-label">Data Coloring</span>
+          <div class="filter-control slicer layer-control" aria-label="Layer selection controls">
+            <span class="filter-label">Layer Selection</span>
             <button type="button" id="layerToggle" class="filter-button">
-              <span id="layerButtonText">All Data Layers</span>
+              <span id="layerButtonText">Country</span>
               <span class="chevron"></span>
             </button>
             <div id="layerMenu" class="slicer-menu layer-menu" hidden>
               <label class="layer-toggle">
-                <input id="countryLayerToggle" type="checkbox" checked />
-                <span>Color Countries</span>
+                <input id="countryLayerToggle" type="radio" name="activeLayer" value="country" checked />
+                <span>Country</span>
               </label>
               <label class="layer-toggle">
-                <input id="districtLayerToggle" type="checkbox" checked />
-                <span>Color Districts</span>
+                <input id="districtLayerToggle" type="radio" name="activeLayer" value="district" />
+                <span>District</span>
               </label>
               <label class="layer-toggle">
-                <input id="schoolLayerToggle" type="checkbox" checked />
-                <span>Show School Pins</span>
+                <input id="schoolLayerToggle" type="radio" name="activeLayer" value="school" />
+                <span>School</span>
               </label>
             </div>
           </div>

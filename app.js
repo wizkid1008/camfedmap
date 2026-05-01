@@ -900,21 +900,23 @@ function updateSlicerCounts() {
 }
 
 function updateLayerButtonText() {
-  const selectedLayers = [
-    countryLayerToggle.checked ? "Country Color" : null,
-    districtLayerToggle.checked ? "District Color" : null,
-    schoolLayerToggle.checked ? "School Pins" : null,
-  ].filter(Boolean);
+  layerButtonText.textContent = getActiveLayerLabel();
+}
 
-  if (selectedLayers.length === 0) {
-    layerButtonText.textContent = "No Data Layers";
-  } else if (selectedLayers.length === 3) {
-    layerButtonText.textContent = "All Data Layers";
-  } else if (selectedLayers.length === 1) {
-    layerButtonText.textContent = selectedLayers[0];
-  } else {
-    layerButtonText.textContent = `${selectedLayers.length} Data Layers`;
-  }
+function getActiveLayer() {
+  if (schoolLayerToggle.checked) return "school";
+  if (districtLayerToggle.checked) return "district";
+  return "country";
+}
+
+function getActiveLayerLabel() {
+  const labels = {
+    country: "Country",
+    district: "District",
+    school: "School",
+  };
+
+  return labels[getActiveLayer()];
 }
 
 function formatButtonText(selectedCount, totalCount, label) {
@@ -1021,7 +1023,7 @@ function renderDistricts() {
   );
   map.invalidateSize();
   renderSchools(visibleSchools);
-  renderCountryChart(filtered);
+  renderLayerChart(filtered, visibleSchools);
   renderLegend(getLegendMetricSource(filtered, visibleSchools));
   setStatus(
     allDistricts.length === 0
@@ -1052,11 +1054,15 @@ function getVisibleBoundaryContext() {
 }
 
 function getLegendMetricSource(boundaries, schools) {
-  if (schoolLayerToggle.checked && !countryLayerToggle.checked && !districtLayerToggle.checked) {
+  const activeLayer = getActiveLayer();
+
+  if (activeLayer === "school") {
     return schools;
   }
 
-  return boundaries;
+  return boundaries.filter((boundary) =>
+    activeLayer === "country" ? boundary.boundary_level === "ADM0" : boundary.boundary_level !== "ADM0"
+  );
 }
 
 function updateMapEmptyState(featureCount) {
@@ -1108,31 +1114,28 @@ function renderSchools(visibleSchools = getVisibleSchools()) {
   }).addTo(map);
 }
 
-function renderCountryChart(districts) {
+function renderLayerChart(boundaries, schools) {
   const metric = metricSelect.value;
-  const priorityDistricts = districts.filter(
-    (district) => isPriorityCountry(district) && district.boundary_level !== "ADM0"
-  );
-  const countryRows = aggregateByCountry(priorityDistricts, metric);
-  const maxValue = Math.max(...countryRows.map((row) => row.value), 0);
+  const activeLayer = getActiveLayer();
+  const rows = getLayerChartRows(boundaries, schools, metric, activeLayer);
+  const maxValue = Math.max(...rows.map((row) => row.value), 0);
 
-  chartTitle.textContent =
-    selectedCountries.size === countryOptions.length ? "Selected Countries" : "Filtered Countries";
+  chartTitle.textContent = getLayerChartTitle(activeLayer);
   chartMetricLabel.textContent = getMetricLabel(metric);
   countryChart.innerHTML = "";
 
-  if (countryRows.length === 0) {
-    countryChart.innerHTML = `<p class="empty-chart">No matching priority districts.</p>`;
+  if (rows.length === 0) {
+    countryChart.innerHTML = `<p class="empty-chart">No matching ${escapeHtml(activeLayer)} data.</p>`;
     return;
   }
 
-  countryRows.forEach((row) => {
+  rows.forEach((row) => {
     const barWidth = maxValue > 0 ? Math.max((row.value / maxValue) * 100, 4) : 4;
     const item = document.createElement("div");
     item.className = "bar-row";
     item.innerHTML = `
       <div class="bar-meta">
-        <span>${escapeHtml(row.country_name)}</span>
+        <span>${escapeHtml(row.label)}</span>
         <strong>${formatMetric(row.value, metric)}</strong>
       </div>
       <div class="bar-track" aria-hidden="true">
@@ -1143,26 +1146,41 @@ function renderCountryChart(districts) {
   });
 }
 
-function aggregateByCountry(districts, metric) {
-  const grouped = new Map();
+function getLayerChartRows(boundaries, schools, metric, activeLayer) {
+  const source =
+    activeLayer === "school"
+      ? schools
+      : boundaries.filter((boundary) =>
+          activeLayer === "country"
+            ? boundary.boundary_level === "ADM0" &&
+              isPriorityCountry(boundary) &&
+              selectedCountries.has(boundary.country_slug)
+            : boundary.boundary_level !== "ADM0" && isPriorityCountry(boundary)
+        );
 
-  districts.forEach((district) => {
-    const current = grouped.get(district.country_slug) || {
-      country_name: district.country_name,
-      total: 0,
-      count: 0,
-    };
-    current.total += getDistrictMetric(district, metric);
-    current.count += 1;
-    grouped.set(district.country_slug, current);
-  });
-
-  return Array.from(grouped.values())
-    .map((row) => ({
-      country_name: row.country_name,
-      value: metric === "risk_score" && row.count > 0 ? row.total / row.count : row.total,
+  return source
+    .filter((item) => hasMetricData(item, metric))
+    .map((item) => ({
+      label: getFeatureLabel(item, activeLayer),
+      value: getDistrictMetric(item, metric),
     }))
     .sort((a, b) => b.value - a.value);
+}
+
+function getLayerChartTitle(activeLayer) {
+  const titles = {
+    country: selectedCountries.size === countryOptions.length ? "Selected Countries" : "Filtered Countries",
+    district: "Selected Districts",
+    school: "Selected Schools",
+  };
+
+  return titles[activeLayer];
+}
+
+function getFeatureLabel(feature, activeLayer) {
+  if (activeLayer === "school") return feature.school_name;
+  if (activeLayer === "country") return feature.country_name;
+  return feature.district_name;
 }
 
 function districtStyle(feature) {
@@ -1327,11 +1345,7 @@ function bindDistrictPopup(feature, layer) {
     </div>
   `);
   layer.bindTooltip(
-    `
-      <strong>${escapeHtml(district.district_name)}</strong><br>
-      ${escapeHtml(district.country_name)}<br>
-      ${escapeHtml(getMetricLabel(metric))}: ${formatMetric(value, metric)}
-    `,
+    `<strong>${escapeHtml(district.district_name)}</strong>`,
     {
       sticky: true,
       direction: "top",
@@ -1361,9 +1375,7 @@ function bindSchoolPopup(feature, layer) {
     </div>
   `);
   layer.bindTooltip(
-    `${escapeHtml(school.school_name)}: ${formatMetric(value, metric)} ${escapeHtml(
-      getMetricLabel(metric)
-    )}`,
+    `<strong>${escapeHtml(school.school_name)}</strong>`,
     { sticky: true }
   );
   layer.on({
