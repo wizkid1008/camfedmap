@@ -1009,8 +1009,11 @@ function updateFilterVisibility() {
   const layer = getActiveLayer();
   const districtControl = document.getElementById("districtControl");
   const schoolControl = document.getElementById("schoolControl");
+  // Country → hide both District and School chips
+  // District → hide School chip only
+  // School   → show both
   if (districtControl) districtControl.hidden = layer === "country";
-  if (schoolControl) schoolControl.hidden = layer !== "school";
+  if (schoolControl) schoolControl.hidden = layer === "country" || layer === "district";
 }
 
 function getActiveLayer() {
