@@ -1946,15 +1946,8 @@ function closeSlicerMenus() {
 }
 
 function handleLayerChange() {
-  // When Country layer is active, always force all districts selected
-  // so the hidden District chip can never carry a stale partial selection.
-  if (getActiveLayer() === "country") {
-    districtSelectionMode = "all";
-    selectedDistricts = new Set(districtOptions.map((d) => d.key));
-    refreshSchoolOptions();
-    renderDistrictList();
-    updateSlicerCounts();
-  }
+  // Show/hide District and School chips based on the active layer.
+  // District selection data is preserved as-is underneath.
   updateFilterVisibility();
   renderDistricts();
 }
