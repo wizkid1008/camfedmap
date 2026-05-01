@@ -410,6 +410,10 @@ const metricSelect = document.querySelector("#metricSelect");
 const yearStart = document.querySelector("#yearStart");
 const yearEnd = document.querySelector("#yearEnd");
 const yearRangeText = document.querySelector("#yearRangeText");
+const layerToggle = document.querySelector("#layerToggle");
+const layerMenu = document.querySelector("#layerMenu");
+const layerButtonText = document.querySelector("#layerButtonText");
+const countryLayerToggle = document.querySelector("#countryLayerToggle");
 const districtLayerToggle = document.querySelector("#districtLayerToggle");
 const schoolLayerToggle = document.querySelector("#schoolLayerToggle");
 const statusText = document.querySelector("#statusText");
@@ -834,6 +838,25 @@ function updateSlicerCounts() {
     schoolOptions.length,
     "Schools"
   );
+  updateLayerButtonText();
+}
+
+function updateLayerButtonText() {
+  const selectedLayers = [
+    countryLayerToggle.checked ? "Countries" : null,
+    districtLayerToggle.checked ? "Districts" : null,
+    schoolLayerToggle.checked ? "Schools" : null,
+  ].filter(Boolean);
+
+  if (selectedLayers.length === 0) {
+    layerButtonText.textContent = "No Layers";
+  } else if (selectedLayers.length === 3) {
+    layerButtonText.textContent = "All Layers";
+  } else if (selectedLayers.length === 1) {
+    layerButtonText.textContent = selectedLayers[0];
+  } else {
+    layerButtonText.textContent = `${selectedLayers.length} Layers`;
+  }
 }
 
 function formatButtonText(selectedCount, totalCount, label) {
@@ -935,7 +958,9 @@ function renderDistricts() {
     map.fitBounds(boundaryLayer.getBounds(), { padding: [28, 28] });
   }
 
-  updateMapEmptyState(filtered.length);
+  updateMapEmptyState(
+    filtered.length + (schoolLayerToggle.checked ? visibleSchools.length : 0)
+  );
   map.invalidateSize();
   renderSchools(visibleSchools);
   renderCountryChart(filtered);
@@ -955,9 +980,10 @@ function getFilteredBoundaries() {
   return allDistricts.filter((district) => {
     const isContextCountry = district.boundary_level === "ADM0";
     const districtKey = getDistrictKey(district);
+    const countryLayersVisible = countryLayerToggle.checked;
     const districtLayersVisible = districtLayerToggle.checked;
     const countryMatch =
-      isContextCountry ||
+      (isContextCountry && countryLayersVisible) ||
       (districtLayersVisible &&
         isPriorityCountry(district) &&
         selectedCountries.has(district.country_slug) &&
@@ -1419,11 +1445,21 @@ yearEnd.addEventListener("input", () => {
   updateYearRangeText();
   renderDistricts();
 });
-districtLayerToggle.addEventListener("change", renderDistricts);
-schoolLayerToggle.addEventListener("change", renderDistricts);
-countryToggle.addEventListener("click", () => toggleMenu(countryMenu, districtMenu, schoolMenu));
-districtToggle.addEventListener("click", () => toggleMenu(districtMenu, countryMenu, schoolMenu));
-schoolToggle.addEventListener("click", () => toggleMenu(schoolMenu, countryMenu, districtMenu));
+countryLayerToggle.addEventListener("change", handleLayerChange);
+districtLayerToggle.addEventListener("change", handleLayerChange);
+schoolLayerToggle.addEventListener("change", handleLayerChange);
+countryToggle.addEventListener("click", () =>
+  toggleMenu(countryMenu, districtMenu, schoolMenu, layerMenu)
+);
+districtToggle.addEventListener("click", () =>
+  toggleMenu(districtMenu, countryMenu, schoolMenu, layerMenu)
+);
+schoolToggle.addEventListener("click", () =>
+  toggleMenu(schoolMenu, countryMenu, districtMenu, layerMenu)
+);
+layerToggle.addEventListener("click", () =>
+  toggleMenu(layerMenu, countryMenu, districtMenu, schoolMenu)
+);
 document.addEventListener("click", (event) => {
   if (!event.target.closest(".slicer")) {
     closeSlicerMenus();
@@ -1553,6 +1589,12 @@ function closeSlicerMenus() {
   countryMenu.hidden = true;
   districtMenu.hidden = true;
   schoolMenu.hidden = true;
+  layerMenu.hidden = true;
+}
+
+function handleLayerChange() {
+  updateLayerButtonText();
+  renderDistricts();
 }
 
 Promise.all([loadDistricts(), loadSchools()])

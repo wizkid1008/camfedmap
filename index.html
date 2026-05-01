@@ -97,16 +97,26 @@
             </div>
           </div>
 
-          <div class="filter-control layer-control" aria-label="Map layer controls">
+          <div class="filter-control slicer layer-control" aria-label="Map layer controls">
             <span class="filter-label">Layers</span>
-            <label class="layer-toggle">
-              <input id="districtLayerToggle" type="checkbox" checked />
-              <span>Districts</span>
-            </label>
-            <label class="layer-toggle">
-              <input id="schoolLayerToggle" type="checkbox" checked />
-              <span>Schools</span>
-            </label>
+            <button type="button" id="layerToggle" class="filter-button">
+              <span id="layerButtonText">All Layers</span>
+              <span class="chevron"></span>
+            </button>
+            <div id="layerMenu" class="slicer-menu layer-menu" hidden>
+              <label class="layer-toggle">
+                <input id="countryLayerToggle" type="checkbox" checked />
+                <span>Countries</span>
+              </label>
+              <label class="layer-toggle">
+                <input id="districtLayerToggle" type="checkbox" checked />
+                <span>Districts</span>
+              </label>
+              <label class="layer-toggle">
+                <input id="schoolLayerToggle" type="checkbox" checked />
+                <span>Schools</span>
+              </label>
+            </div>
           </div>
         </section>
 
