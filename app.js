@@ -1475,6 +1475,44 @@ function formatRoundedLegendNumber(value) {
   return formatNumber(rounded);
 }
 
+// ── Custom map tooltip (fixed on <body>, immune to map overflow/clip) ──────
+let _mapTooltipEl = null;
+
+function getMapTooltip() {
+  if (!_mapTooltipEl) {
+    _mapTooltipEl = document.createElement("div");
+    _mapTooltipEl.className = "map-tooltip";
+    _mapTooltipEl.hidden = true;
+    document.body.appendChild(_mapTooltipEl);
+  }
+  return _mapTooltipEl;
+}
+
+function buildTooltipHtml(type, name, sub) {
+  const typeHtml = `<small style="display:block;opacity:0.65;font-size:0.6rem;letter-spacing:0.09em;text-transform:uppercase;font-weight:900;margin-bottom:3px">${escapeHtml(type)}</small>`;
+  const nameHtml = `<strong>${escapeHtml(name)}${sub ? `, ${escapeHtml(sub)}` : ""}</strong>`;
+  return typeHtml + nameHtml;
+}
+
+function showMapTooltip(html, mouseEvent) {
+  const tip = getMapTooltip();
+  tip.innerHTML = html;
+  tip.hidden = false;
+  moveMapTooltip(mouseEvent);
+}
+
+function moveMapTooltip(mouseEvent) {
+  const tip = getMapTooltip();
+  if (tip.hidden) return;
+  tip.style.left = mouseEvent.clientX + "px";
+  tip.style.top = (mouseEvent.clientY - 10) + "px";
+}
+
+function hideMapTooltip() {
+  const tip = getMapTooltip();
+  tip.hidden = true;
+}
+
 function bindDistrictPopup(feature, layer) {
   const district = feature.properties;
   const metric = metricSelect.value;
@@ -1495,18 +1533,17 @@ function bindDistrictPopup(feature, layer) {
     ? district.country_name
     : district.district_name;
   const tooltipSub = isCountryBoundary ? "" : district.country_name;
+  const tooltipHtml = buildTooltipHtml(tooltipType, tooltipName, tooltipSub);
 
-  layer.bindTooltip(
-    `<small style="opacity:0.65;font-size:0.6rem;letter-spacing:0.09em;text-transform:uppercase;font-weight:900">${tooltipType}</small><br><strong>${escapeHtml(tooltipName)}${tooltipSub ? `, ${escapeHtml(tooltipSub)}` : ""}</strong>`,
-    {
-      sticky: true,
-      direction: "top",
-      className: "district-tooltip",
-    }
-  );
   layer.on({
-    mouseover: () => updateInspectorForDistrict(district),
-    mousemove: () => updateInspectorForDistrict(district),
+    mouseover: (e) => {
+      showMapTooltip(tooltipHtml, e.originalEvent);
+      updateInspectorForDistrict(district);
+    },
+    mousemove: (e) => {
+      moveMapTooltip(e.originalEvent);
+    },
+    mouseout: () => hideMapTooltip(),
   });
 }
 
@@ -1526,17 +1563,17 @@ function bindSchoolPopup(feature, layer) {
       </dl>
     </div>
   `);
-  layer.bindTooltip(
-    `<small style="opacity:0.65;font-size:0.6rem;letter-spacing:0.09em;text-transform:uppercase;font-weight:900">School</small><br><strong>${escapeHtml(school.school_name)}</strong>`,
-    {
-      sticky: true,
-      direction: "top",
-      className: "school-tooltip",
-    }
-  );
+  const schoolTooltipHtml = buildTooltipHtml("School", school.school_name, "");
+
   layer.on({
-    mouseover: () => updateInspectorForSchool(school),
-    mousemove: () => updateInspectorForSchool(school),
+    mouseover: (e) => {
+      showMapTooltip(schoolTooltipHtml, e.originalEvent);
+      updateInspectorForSchool(school);
+    },
+    mousemove: (e) => {
+      moveMapTooltip(e.originalEvent);
+    },
+    mouseout: () => hideMapTooltip(),
   });
 }
 
@@ -1745,8 +1782,12 @@ yearEnd.addEventListener("input", () => {
 countryLayerToggle.addEventListener("change", handleLayerChange);
 districtLayerToggle.addEventListener("change", handleLayerChange);
 schoolLayerToggle.addEventListener("change", handleLayerChange);
-document.querySelectorAll(".seg-opt label, .seg-opt").forEach((el) => {
-  el.addEventListener("click", () => setTimeout(handleLayerChange, 0));
+document.querySelectorAll(".seg-opt").forEach((label) => {
+  label.addEventListener("click", () => {
+    const input = label.querySelector("input[type='radio']");
+    if (input) input.checked = true;
+    handleLayerChange();
+  });
 });
 countryToggle.addEventListener("click", () =>
   toggleMenu(countryMenu, districtMenu, schoolMenu)

@@ -210,7 +210,6 @@ body {
   min-height: 0;
   padding: 0;
   border: 0;
-  pointer-events: none;
 }
 
 .seg-opt span {
@@ -942,6 +941,30 @@ input:focus {
   padding: 7px 11px;
   white-space: normal;
   min-width: 80px;
+}
+
+/* Custom map tooltip — rendered on <body> so overflow/clip never hides it */
+.map-tooltip {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid #d9d1e4;
+  border-radius: 8px;
+  box-shadow: 0 10px 22px rgba(28, 18, 48, 0.14);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.35;
+  padding: 7px 11px;
+  white-space: normal;
+  min-width: 80px;
+  transform: translate(-50%, calc(-100% - 12px));
+}
+
+.map-tooltip[hidden] {
+  display: none;
 }
 
 @media (max-width: 820px) {
