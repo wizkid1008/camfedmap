@@ -1479,42 +1479,34 @@ function formatRoundedLegendNumber(value) {
   return formatNumber(rounded);
 }
 
-// ── Custom map tooltip (fixed on <body>, immune to map overflow/clip) ──────
-let _mapTooltipEl = null;
+// ── Leaflet hover tooltip ────────────────────────────────────────────────────
+// Single div on <body> — position:absolute + pageX/Y so scroll and overflow
+// on the map container can never clip or hide it.
+const mapHoverTooltip = document.createElement("div");
+mapHoverTooltip.className = "map-hover-tooltip";
+document.body.appendChild(mapHoverTooltip);
 
-function getMapTooltip() {
-  if (!_mapTooltipEl) {
-    _mapTooltipEl = document.createElement("div");
-    _mapTooltipEl.className = "map-tooltip";
-    _mapTooltipEl.hidden = true;
-    document.body.appendChild(_mapTooltipEl);
-  }
-  return _mapTooltipEl;
+function showTooltip(e, labelHtml) {
+  if (!e.originalEvent) return;
+  mapHoverTooltip.innerHTML = labelHtml;
+  mapHoverTooltip.style.display = "block";
+  mapHoverTooltip.style.left = `${e.originalEvent.pageX + 14}px`;
+  mapHoverTooltip.style.top  = `${e.originalEvent.pageY + 14}px`;
 }
 
-function buildTooltipHtml(type, name, sub) {
-  const typeHtml = `<small style="display:block;opacity:0.65;font-size:0.6rem;letter-spacing:0.09em;text-transform:uppercase;font-weight:900;margin-bottom:3px">${escapeHtml(type)}</small>`;
-  const nameHtml = `<strong>${escapeHtml(name)}${sub ? `, ${escapeHtml(sub)}` : ""}</strong>`;
-  return typeHtml + nameHtml;
+function moveTooltip(e) {
+  if (!e.originalEvent) return;
+  mapHoverTooltip.style.left = `${e.originalEvent.pageX + 14}px`;
+  mapHoverTooltip.style.top  = `${e.originalEvent.pageY + 14}px`;
 }
 
-function showMapTooltip(html, mouseEvent) {
-  const tip = getMapTooltip();
-  tip.innerHTML = html;
-  tip.hidden = false;
-  moveMapTooltip(mouseEvent);
+function hideTooltip() {
+  mapHoverTooltip.style.display = "none";
 }
 
-function moveMapTooltip(mouseEvent) {
-  const tip = getMapTooltip();
-  if (tip.hidden) return;
-  tip.style.left = mouseEvent.clientX + "px";
-  tip.style.top = (mouseEvent.clientY - 10) + "px";
-}
-
-function hideMapTooltip() {
-  const tip = getMapTooltip();
-  tip.hidden = true;
+function buildTooltipLabel(type, name, sub) {
+  return `<span class="mht-type">${escapeHtml(type)}</span>`
+       + `<span class="mht-name">${escapeHtml(name)}${sub ? `, ${escapeHtml(sub)}` : ""}</span>`;
 }
 
 function bindDistrictPopup(feature, layer) {
@@ -1533,21 +1525,14 @@ function bindDistrictPopup(feature, layer) {
   `);
   const isCountryBoundary = district.boundary_level === "ADM0";
   const tooltipType = isCountryBoundary ? "Country" : "District";
-  const tooltipName = isCountryBoundary
-    ? district.country_name
-    : district.district_name;
-  const tooltipSub = isCountryBoundary ? "" : district.country_name;
-  const tooltipHtml = buildTooltipHtml(tooltipType, tooltipName, tooltipSub);
+  const tooltipName = isCountryBoundary ? district.country_name : district.district_name;
+  const tooltipSub  = isCountryBoundary ? "" : district.country_name;
+  const tooltipLabel = buildTooltipLabel(tooltipType, tooltipName, tooltipSub);
 
   layer.on({
-    mouseover: () => {
-      const tip = getMapTooltip();
-      tip.innerHTML = tooltipHtml;
-      tip.hidden = false;
-      if (_lastMapMouseEvent) moveMapTooltip(_lastMapMouseEvent);
-      updateInspectorForDistrict(district);
-    },
-    mouseout: () => hideMapTooltip(),
+    mouseover: (e) => { showTooltip(e, tooltipLabel); updateInspectorForDistrict(district); },
+    mousemove: (e) => moveTooltip(e),
+    mouseout:  ()  => { hideTooltip(); },
   });
 }
 
@@ -1567,17 +1552,13 @@ function bindSchoolPopup(feature, layer) {
       </dl>
     </div>
   `);
-  const schoolTooltipHtml = buildTooltipHtml("School", school.school_name, "");
+  const schoolName = school.school_name || school.name || school.item_name || "Unknown";
+  const schoolLabel = buildTooltipLabel("School", schoolName, "");
 
   layer.on({
-    mouseover: () => {
-      const tip = getMapTooltip();
-      tip.innerHTML = schoolTooltipHtml;
-      tip.hidden = false;
-      if (_lastMapMouseEvent) moveMapTooltip(_lastMapMouseEvent);
-      updateInspectorForSchool(school);
-    },
-    mouseout: () => hideMapTooltip(),
+    mouseover: (e) => { showTooltip(e, schoolLabel); updateInspectorForSchool(school); },
+    mousemove: (e) => moveTooltip(e),
+    mouseout:  ()  => { hideTooltip(); },
   });
 }
 
@@ -1769,15 +1750,8 @@ function escapeHtml(value) {
   });
 }
 
-// Native map-level mouse tracking — keeps the fixed tooltip glued to the
-// cursor on every pixel of movement regardless of Leaflet feature events.
-const mapEl = document.getElementById("map");
-let _lastMapMouseEvent = null;
-mapEl.addEventListener("mousemove", (e) => {
-  _lastMapMouseEvent = e;
-  moveMapTooltip(e);
-});
-mapEl.addEventListener("mouseleave", () => hideMapTooltip());
+// Hide tooltip if mouse leaves the map entirely
+document.getElementById("map").addEventListener("mouseleave", hideTooltip);
 
 countrySearch.addEventListener("input", renderCountryList);
 districtSearch.addEventListener("input", renderDistrictList);
