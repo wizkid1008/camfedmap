@@ -991,7 +991,7 @@ function normalizeKpis(kpis) {
 }
 
 function renderDistricts() {
-  const filtered = getFilteredBoundaries();
+  const filtered = getVisibleBoundaryContext();
   const visibleSchools = getVisibleSchools();
 
   if (boundaryLayer) {
@@ -1022,19 +1022,19 @@ function renderDistricts() {
   map.invalidateSize();
   renderSchools(visibleSchools);
   renderCountryChart(filtered);
-  renderLegend(filtered);
+  renderLegend(getLegendMetricSource(filtered, visibleSchools));
   setStatus(
     allDistricts.length === 0
       ? "Supabase connected, but no boundary rows were returned."
-      : `Showing ${filtered.length} boundary layer${
+      : `Showing ${filtered.length} boundary context layer${
           filtered.length === 1 ? "" : "s"
         } and ${schoolLayerToggle.checked ? visibleSchools.length : 0} school point${
           visibleSchools.length === 1 ? "" : "s"
-        }. KPI rows loaded: ${loadedKpiRowCount}. School rows loaded: ${loadedSchoolRowCount}. ${getKpiAvailabilityMessage(filtered)}`
+        }. KPI rows loaded: ${loadedKpiRowCount}. School rows loaded: ${loadedSchoolRowCount}. ${getKpiAvailabilityMessage(getLegendMetricSource(filtered, visibleSchools))}`
   );
 }
 
-function getFilteredBoundaries() {
+function getVisibleBoundaryContext() {
   return allDistricts.filter((district) => {
     const isContextCountry = district.boundary_level === "ADM0";
     const districtKey = getDistrictKey(district);
@@ -1049,6 +1049,14 @@ function getFilteredBoundaries() {
       selectedDistricts.has(districtKey)
     );
   });
+}
+
+function getLegendMetricSource(boundaries, schools) {
+  if (schoolLayerToggle.checked && !countryLayerToggle.checked && !districtLayerToggle.checked) {
+    return schools;
+  }
+
+  return boundaries;
 }
 
 function updateMapEmptyState(featureCount) {
