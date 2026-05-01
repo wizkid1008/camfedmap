@@ -692,6 +692,41 @@ function getDistrictKey(district) {
   return `${district.country_slug}::${district.district_name}`.toLowerCase();
 }
 
+function getNormalizedDistrictName(name) {
+  return String(name || "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(
+      /\b(district|municipal|municipality|metropolitan|metro|city|town|council|province|region)\b/g,
+      " "
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isDistrictNameMatch(leftName, rightName) {
+  const left = getNormalizedDistrictName(leftName);
+  const right = getNormalizedDistrictName(rightName);
+
+  if (!left || !right) return false;
+  return left === right || left.includes(right) || right.includes(left);
+}
+
+function isSchoolInSelectedDistricts(school) {
+  if (selectedDistricts.has(getDistrictKey(school))) {
+    return true;
+  }
+
+  return districtOptions.some((district) => {
+    return (
+      selectedDistricts.has(district.key) &&
+      district.countrySlug === school.country_slug &&
+      isDistrictNameMatch(district.name, school.district_name)
+    );
+  });
+}
+
 function initializeSlicers() {
   countryOptions = getCountryOptions();
   selectedCountries = new Set(countryOptions.map((country) => country.slug));
@@ -784,7 +819,7 @@ function refreshSchoolOptions() {
 
   allSchools
     .filter((school) => selectedCountries.has(school.country_slug))
-    .filter((school) => selectedDistricts.has(getDistrictKey(school)))
+    .filter(isSchoolInSelectedDistricts)
     .forEach((school) => {
       schools.set(school.school_id, {
         id: school.school_id,
@@ -920,7 +955,7 @@ function getActiveLayerLabel() {
 }
 
 function formatButtonText(selectedCount, totalCount, label) {
-  if (totalCount === 0) return `Loading ${label}`;
+  if (totalCount === 0) return `No ${label}`;
   if (selectedCount === 0) return `No ${label}`;
   if (selectedCount === totalCount) return `All ${label}`;
   if (selectedCount === 1) return `1 ${label.slice(0, -1)}`;
@@ -1073,7 +1108,7 @@ function getVisibleSchools() {
   return allSchools.filter((school) => {
     return (
       selectedCountries.has(school.country_slug) &&
-      selectedDistricts.has(getDistrictKey(school)) &&
+      isSchoolInSelectedDistricts(school) &&
       selectedSchools.has(school.school_id)
     );
   });
