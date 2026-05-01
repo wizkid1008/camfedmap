@@ -400,10 +400,8 @@ h2 {
 
 
 .slicer-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 92px;
-  z-index: 2000;
+  position: fixed;
+  z-index: 9999;
   width: 360px;
   max-width: min(82vw, 460px);
   padding: 12px;
@@ -953,9 +951,7 @@ input:focus {
 }
 
 .district-tooltip,
-.school-tooltip,
-.map-tooltip-wrap {
-  z-index: 1000;
+.school-tooltip {
   color: var(--ink);
   background: #fff;
   border: 1px solid #d9d1e4;
@@ -963,9 +959,12 @@ input:focus {
   box-shadow: 0 10px 22px rgba(28, 18, 48, 0.14);
   font: inherit;
   font-size: 0.82rem;
+  font-weight: 800;
   line-height: 1.35;
   pointer-events: none;
-  padding: 6px 10px;
+  padding: 7px 11px;
+  white-space: normal;
+  min-width: 80px;
 }
 
 @media (max-width: 820px) {

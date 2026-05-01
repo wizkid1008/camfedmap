@@ -1497,11 +1497,11 @@ function bindDistrictPopup(feature, layer) {
   const tooltipSub = isCountryBoundary ? "" : district.country_name;
 
   layer.bindTooltip(
-    `<span class="map-tooltip-type">${tooltipType}</span><strong class="map-tooltip-name">${escapeHtml(tooltipName)}${tooltipSub ? `, ${escapeHtml(tooltipSub)}` : ""}</strong>`,
+    `<span style="display:block;font-size:0.62rem;font-weight:900;letter-spacing:0.09em;text-transform:uppercase;color:#6d6678;margin-bottom:2px">${tooltipType}</span><strong>${escapeHtml(tooltipName)}${tooltipSub ? `, ${escapeHtml(tooltipSub)}` : ""}</strong>`,
     {
       sticky: true,
       direction: "top",
-      className: "map-tooltip-wrap",
+      className: "district-tooltip",
     }
   );
   layer.on({
@@ -1527,11 +1527,11 @@ function bindSchoolPopup(feature, layer) {
     </div>
   `);
   layer.bindTooltip(
-    `<span class="map-tooltip-type">School</span><strong class="map-tooltip-name">${escapeHtml(school.school_name)}</strong>`,
+    `<span style="display:block;font-size:0.62rem;font-weight:900;letter-spacing:0.09em;text-transform:uppercase;color:#6d6678;margin-bottom:2px">School</span><strong>${escapeHtml(school.school_name)}</strong>`,
     {
       sticky: true,
       direction: "top",
-      className: "map-tooltip-wrap",
+      className: "school-tooltip",
     }
   );
   layer.on({
@@ -1874,7 +1874,17 @@ function toggleMenu(menuToToggle, ...menusToClose) {
   menusToClose.forEach((menu) => {
     menu.hidden = true;
   });
-  menuToToggle.hidden = !menuToToggle.hidden;
+  const willOpen = menuToToggle.hidden;
+  menuToToggle.hidden = !willOpen;
+  if (willOpen) {
+    // Position fixed relative to the toggle button
+    const btn = menuToToggle.previousElementSibling;
+    if (btn) {
+      const rect = btn.getBoundingClientRect();
+      menuToToggle.style.top = (rect.bottom + 6) + "px";
+      menuToToggle.style.left = rect.left + "px";
+    }
+  }
 }
 
 function closeSlicerMenus() {
