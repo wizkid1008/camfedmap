@@ -1075,7 +1075,9 @@ function renderSchools(visibleSchools = getVisibleSchools()) {
   }
 
   const maxValue = Math.max(
-    ...visibleSchools.map((school) => getDistrictMetric(school, metricSelect.value)),
+    ...visibleSchools
+      .filter((school) => hasMetricData(school, metricSelect.value))
+      .map((school) => getDistrictMetric(school, metricSelect.value)),
     0
   );
 
@@ -1159,37 +1161,40 @@ function districtStyle(feature) {
   const metric = metricSelect.value;
   const isPriority = isPriorityCountry(feature.properties);
   const isCountryContext = feature.properties.boundary_level === "ADM0";
-  const isCountryDataLayer =
-    isCountryContext &&
-    isPriority &&
-    selectedCountries.has(feature.properties.country_slug) &&
-    !districtLayerToggle.checked;
-  const isDataLayer = isPriority && (!isCountryContext || isCountryDataLayer);
+  const hasData = hasMetricData(feature.properties, metric);
+  const isSelectedPriorityCountry =
+    isPriority && selectedCountries.has(feature.properties.country_slug);
+  const isDataLayer =
+    hasData &&
+    (isCountryContext
+      ? isSelectedPriorityCountry
+      : isPriority && selectedDistricts.has(getDistrictKey(feature.properties)));
   const value = getDistrictMetric(feature.properties, metric);
 
   return {
     color: isDataLayer ? "#3f2875" : "#a49da8",
-    weight: isCountryContext ? (isCountryDataLayer ? 1.2 : 1) : isPriority ? 1.4 : 0.7,
-    opacity: isCountryContext ? (isCountryDataLayer ? 0.8 : 0.5) : isPriority ? 0.92 : 0.45,
+    weight: isCountryContext ? (isDataLayer ? 1.2 : 1) : isDataLayer ? 1.4 : 0.7,
+    opacity: isCountryContext ? (isDataLayer ? 0.8 : 0.5) : isDataLayer ? 0.92 : 0.45,
     fillColor: isDataLayer
       ? colorForValue(value, metric, feature.properties.boundary_level)
       : "#ded8d1",
-    fillOpacity: isCountryContext ? (isCountryDataLayer ? 0.66 : 0.12) : isPriority ? 0.72 : 0.28,
+    fillOpacity: isCountryContext ? (isDataLayer ? 0.66 : 0.12) : isDataLayer ? 0.72 : 0.28,
   };
 }
 
 function getSchoolMarkerStyle(school, maxValue) {
   const metric = metricSelect.value;
   const value = getDistrictMetric(school, metric);
+  const hasData = hasMetricData(school, metric);
   const ratio = maxValue > 0 ? value / maxValue : 0;
 
   return {
     radius: 5 + ratio * 12,
-    color: "#25123c",
-    weight: 1.4,
-    opacity: 0.92,
-    fillColor: maxValue > 0 ? LEVEL_COLORS[getMetricLevel(value, maxValue) - 1] : "#b78f2f",
-    fillOpacity: 0.88,
+    color: hasData ? "#25123c" : "#918895",
+    weight: hasData ? 1.4 : 1,
+    opacity: hasData ? 0.92 : 0.65,
+    fillColor: hasData && maxValue > 0 ? LEVEL_COLORS[getMetricLevel(value, maxValue) - 1] : "#ded8d1",
+    fillOpacity: hasData ? 0.88 : 0.45,
     className: "school-marker",
   };
 }
@@ -1217,7 +1222,7 @@ function getMetricLevel(value, max) {
 }
 
 function getMaxMetricValue(metric, districts, boundaryLevel = null) {
-  const comparableBoundaries = getComparableMetricBoundaries(districts, boundaryLevel);
+  const comparableBoundaries = getComparableMetricBoundaries(districts, metric, boundaryLevel);
   return Math.max(
     ...comparableBoundaries
       .map((district) => getDistrictMetric(district, metric))
@@ -1226,9 +1231,12 @@ function getMaxMetricValue(metric, districts, boundaryLevel = null) {
   );
 }
 
-function getComparableMetricBoundaries(boundaries, boundaryLevel = null) {
+function getComparableMetricBoundaries(boundaries, metric, boundaryLevel = null) {
   const priorityBoundaries = boundaries.filter(
-    (boundary) => isPriorityCountry(boundary) && selectedCountries.has(boundary.country_slug)
+    (boundary) =>
+      isPriorityCountry(boundary) &&
+      selectedCountries.has(boundary.country_slug) &&
+      hasMetricData(boundary, metric)
   );
 
   if (boundaryLevel) {
@@ -1429,6 +1437,25 @@ function getDistrictMetric(district, metric) {
   return Number(value || 0);
 }
 
+function hasMetricData(district, metric) {
+  if (!district) return false;
+
+  const hasSelectedYearValue = getSelectedYears().some((year) => {
+    const value = getRawDistrictMetric(district, metric, year, { yearlyOnly: true });
+    return value !== undefined && value !== null && value !== "";
+  });
+
+  if (hasSelectedYearValue) {
+    return true;
+  }
+
+  if (district.kpis && Object.hasOwn(district.kpis, metric)) {
+    return true;
+  }
+
+  return Object.hasOwn(district, metric);
+}
+
 function getRawDistrictMetric(district, metric, year, options = {}) {
   if (!district.kpis) {
     return district[metric];
@@ -1495,7 +1522,7 @@ function updateYearRangeText() {
 function getKpiAvailabilityMessage(districts) {
   const metric = metricSelect.value;
   const yearLabel = getYearRangeLabel();
-  const matchingValues = getComparableMetricBoundaries(districts)
+  const matchingValues = getComparableMetricBoundaries(districts, metric)
     .map((district) => getDistrictMetric(district, metric))
     .filter((value) => value !== undefined && value !== null);
 
