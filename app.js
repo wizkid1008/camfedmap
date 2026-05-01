@@ -1497,7 +1497,7 @@ function bindDistrictPopup(feature, layer) {
   const tooltipSub = isCountryBoundary ? "" : district.country_name;
 
   layer.bindTooltip(
-    `<span style="display:block;font-size:0.62rem;font-weight:900;letter-spacing:0.09em;text-transform:uppercase;color:#6d6678;margin-bottom:2px">${tooltipType}</span><strong>${escapeHtml(tooltipName)}${tooltipSub ? `, ${escapeHtml(tooltipSub)}` : ""}</strong>`,
+    `<small style="opacity:0.65;font-size:0.6rem;letter-spacing:0.09em;text-transform:uppercase;font-weight:900">${tooltipType}</small><br><strong>${escapeHtml(tooltipName)}${tooltipSub ? `, ${escapeHtml(tooltipSub)}` : ""}</strong>`,
     {
       sticky: true,
       direction: "top",
@@ -1527,7 +1527,7 @@ function bindSchoolPopup(feature, layer) {
     </div>
   `);
   layer.bindTooltip(
-    `<span style="display:block;font-size:0.62rem;font-weight:900;letter-spacing:0.09em;text-transform:uppercase;color:#6d6678;margin-bottom:2px">School</span><strong>${escapeHtml(school.school_name)}</strong>`,
+    `<small style="opacity:0.65;font-size:0.6rem;letter-spacing:0.09em;text-transform:uppercase;font-weight:900">School</small><br><strong>${escapeHtml(school.school_name)}</strong>`,
     {
       sticky: true,
       direction: "top",
@@ -1740,9 +1740,14 @@ yearEnd.addEventListener("input", () => {
   updateYearRangeText();
   renderDistricts();
 });
+// Listen for layer change via both change event and label click
+// (pointer-events:none on hidden radio inputs can suppress change in some browsers)
 countryLayerToggle.addEventListener("change", handleLayerChange);
 districtLayerToggle.addEventListener("change", handleLayerChange);
 schoolLayerToggle.addEventListener("change", handleLayerChange);
+document.querySelectorAll(".seg-opt label, .seg-opt").forEach((el) => {
+  el.addEventListener("click", () => setTimeout(handleLayerChange, 0));
+});
 countryToggle.addEventListener("click", () =>
   toggleMenu(countryMenu, districtMenu, schoolMenu)
 );
