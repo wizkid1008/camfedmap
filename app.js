@@ -1038,16 +1038,16 @@ function getFilteredBoundaries() {
   return allDistricts.filter((district) => {
     const isContextCountry = district.boundary_level === "ADM0";
     const districtKey = getDistrictKey(district);
-    const countryLayersVisible = countryLayerToggle.checked;
-    const districtLayersVisible = districtLayerToggle.checked;
-    const countryMatch =
-      (isContextCountry && countryLayersVisible) ||
-      (districtLayersVisible &&
-        isPriorityCountry(district) &&
-        selectedCountries.has(district.country_slug) &&
-        selectedDistricts.has(districtKey));
-    const districtMatch = isContextCountry || selectedDistricts.has(districtKey);
-    return countryMatch && districtMatch;
+
+    if (isContextCountry) {
+      return true;
+    }
+
+    return (
+      isPriorityCountry(district) &&
+      selectedCountries.has(district.country_slug) &&
+      selectedDistricts.has(districtKey)
+    );
   });
 }
 
@@ -1164,7 +1164,11 @@ function districtStyle(feature) {
   const hasData = hasMetricData(feature.properties, metric);
   const isSelectedPriorityCountry =
     isPriority && selectedCountries.has(feature.properties.country_slug);
+  const isLayerColored = isCountryContext
+    ? countryLayerToggle.checked
+    : districtLayerToggle.checked;
   const isDataLayer =
+    isLayerColored &&
     hasData &&
     (isCountryContext
       ? isSelectedPriorityCountry
