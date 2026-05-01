@@ -282,18 +282,20 @@ body {
 }
 
 /* ── Map tooltips ─────────────────────────────────────────── */
-.map-tooltip {
-  padding: 2px 0;
+.map-tooltip-wrap {
+  /* Override Leaflet's white-space: nowrap so block labels stack */
+  white-space: normal !important;
+  min-width: 80px;
 }
 
 .map-tooltip-type {
   display: block;
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 900;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .map-tooltip-name {

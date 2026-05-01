@@ -1497,10 +1497,7 @@ function bindDistrictPopup(feature, layer) {
   const tooltipSub = isCountryBoundary ? "" : district.country_name;
 
   layer.bindTooltip(
-    `<div class="map-tooltip">
-      <span class="map-tooltip-type">${tooltipType}</span>
-      <strong class="map-tooltip-name">${escapeHtml(tooltipName)}${tooltipSub ? `, ${escapeHtml(tooltipSub)}` : ""}</strong>
-    </div>`,
+    `<span class="map-tooltip-type">${tooltipType}</span><strong class="map-tooltip-name">${escapeHtml(tooltipName)}${tooltipSub ? `, ${escapeHtml(tooltipSub)}` : ""}</strong>`,
     {
       sticky: true,
       direction: "top",
@@ -1530,10 +1527,7 @@ function bindSchoolPopup(feature, layer) {
     </div>
   `);
   layer.bindTooltip(
-    `<div class="map-tooltip">
-      <span class="map-tooltip-type">School</span>
-      <strong class="map-tooltip-name">${escapeHtml(school.school_name)}</strong>
-    </div>`,
+    `<span class="map-tooltip-type">School</span><strong class="map-tooltip-name">${escapeHtml(school.school_name)}</strong>`,
     {
       sticky: true,
       direction: "top",
