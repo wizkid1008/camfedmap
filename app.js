@@ -1765,6 +1765,12 @@ function escapeHtml(value) {
   });
 }
 
+// Native map-level mouse tracking — keeps the fixed tooltip glued to the
+// cursor on every pixel of movement regardless of Leaflet feature events.
+const mapEl = document.getElementById("map");
+mapEl.addEventListener("mousemove", (e) => moveMapTooltip(e));
+mapEl.addEventListener("mouseleave", () => hideMapTooltip());
+
 countrySearch.addEventListener("input", renderCountryList);
 districtSearch.addEventListener("input", renderDistrictList);
 schoolSearch.addEventListener("input", renderSchoolList);
