@@ -1540,12 +1540,11 @@ function bindDistrictPopup(feature, layer) {
   const tooltipHtml = buildTooltipHtml(tooltipType, tooltipName, tooltipSub);
 
   layer.on({
-    mouseover: (e) => {
-      showMapTooltip(tooltipHtml, e.originalEvent);
+    mouseover: () => {
+      const tip = getMapTooltip();
+      tip.innerHTML = tooltipHtml;
+      tip.hidden = false;
       updateInspectorForDistrict(district);
-    },
-    mousemove: (e) => {
-      moveMapTooltip(e.originalEvent);
     },
     mouseout: () => hideMapTooltip(),
   });
@@ -1570,12 +1569,11 @@ function bindSchoolPopup(feature, layer) {
   const schoolTooltipHtml = buildTooltipHtml("School", school.school_name, "");
 
   layer.on({
-    mouseover: (e) => {
-      showMapTooltip(schoolTooltipHtml, e.originalEvent);
+    mouseover: () => {
+      const tip = getMapTooltip();
+      tip.innerHTML = schoolTooltipHtml;
+      tip.hidden = false;
       updateInspectorForSchool(school);
-    },
-    mousemove: (e) => {
-      moveMapTooltip(e.originalEvent);
     },
     mouseout: () => hideMapTooltip(),
   });
