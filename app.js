@@ -1486,18 +1486,32 @@ const mapHoverTooltip = document.createElement("div");
 mapHoverTooltip.className = "map-hover-tooltip";
 document.body.appendChild(mapHoverTooltip);
 
+function getTooltipPageCoords(e) {
+  // Prefer native event pageX/Y; fall back to Leaflet containerPoint + map offset
+  if (e.originalEvent && e.originalEvent.pageX != null) {
+    return { x: e.originalEvent.pageX, y: e.originalEvent.pageY };
+  }
+  const mapRect = document.getElementById("map").getBoundingClientRect();
+  const cp = e.containerPoint || { x: 0, y: 0 };
+  return {
+    x: mapRect.left + cp.x + window.scrollX,
+    y: mapRect.top  + cp.y + window.scrollY,
+  };
+}
+
 function showTooltip(e, labelHtml) {
-  if (!e.originalEvent) return;
   mapHoverTooltip.innerHTML = labelHtml;
   mapHoverTooltip.style.display = "block";
-  mapHoverTooltip.style.left = `${e.originalEvent.pageX + 14}px`;
-  mapHoverTooltip.style.top  = `${e.originalEvent.pageY + 14}px`;
+  const { x, y } = getTooltipPageCoords(e);
+  mapHoverTooltip.style.left = `${x + 14}px`;
+  mapHoverTooltip.style.top  = `${y + 14}px`;
 }
 
 function moveTooltip(e) {
-  if (!e.originalEvent) return;
-  mapHoverTooltip.style.left = `${e.originalEvent.pageX + 14}px`;
-  mapHoverTooltip.style.top  = `${e.originalEvent.pageY + 14}px`;
+  if (mapHoverTooltip.style.display === "none") return;
+  const { x, y } = getTooltipPageCoords(e);
+  mapHoverTooltip.style.left = `${x + 14}px`;
+  mapHoverTooltip.style.top  = `${y + 14}px`;
 }
 
 function hideTooltip() {
