@@ -1,6 +1,7 @@
 const SUPABASE_URL = "https://qlvayqyihfixikfqfelu.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_MFmdnO0fxCH-TASV_o77FQ_XeO8SoAk";
 const SUPABASE_BOUNDARY_VIEW = "district_boundaries_geojson";
+const SUPABASE_SCHOOL_VIEW = "school_points_geojson";
 
 const DISTRICT_GEOJSON_FILE = "./geoBoundariesCGAZ_ADM2.geojson";
 const SUPABASE_STORAGE_ADM0_OPTIMIZED_URL =
@@ -398,6 +399,13 @@ const districtButtonText = document.querySelector("#districtButtonText");
 const districtList = document.querySelector("#districtList");
 const districtAll = document.querySelector("#districtAll");
 const districtNone = document.querySelector("#districtNone");
+const schoolSearch = document.querySelector("#schoolSearch");
+const schoolToggle = document.querySelector("#schoolToggle");
+const schoolMenu = document.querySelector("#schoolMenu");
+const schoolButtonText = document.querySelector("#schoolButtonText");
+const schoolList = document.querySelector("#schoolList");
+const schoolAll = document.querySelector("#schoolAll");
+const schoolNone = document.querySelector("#schoolNone");
 const metricSelect = document.querySelector("#metricSelect");
 const yearStart = document.querySelector("#yearStart");
 const yearEnd = document.querySelector("#yearEnd");
@@ -414,13 +422,19 @@ const legendRows = document.querySelector("#legendRows");
 const LEVEL_COLORS = ["#e7e0f0", "#c9bbdd", "#b78f2f", "#b5533d", "#6b22aa"];
 
 let allDistricts = [];
+let allSchools = [];
 let boundaryLayer;
+let schoolLayer;
 let countryOptions = [];
 let districtOptions = [];
+let schoolOptions = [];
 let selectedCountries = new Set();
 let selectedDistricts = new Set();
+let selectedSchools = new Set();
 let districtSelectionMode = "all";
+let schoolSelectionMode = "all";
 let loadedKpiRowCount = 0;
+let loadedSchoolRowCount = 0;
 
 populateKpiOptions();
 initializeYearRange();
@@ -550,6 +564,33 @@ async function loadSupabaseKpiRows() {
   }));
 }
 
+async function loadSchools() {
+  const client = getSupabaseClient();
+
+  if (!client) {
+    return [];
+  }
+
+  const { data, error } = await client
+    .from(SUPABASE_SCHOOL_VIEW)
+    .select(
+      "school_id,school_name,country_slug,country_name,district_name,province,geo_source,latitude,longitude,kpis"
+    );
+
+  if (error) {
+    console.warn("School points could not be loaded from Supabase.", error);
+    return [];
+  }
+
+  return data.map(normalizeSupabaseSchool).filter((school) => {
+    return (
+      isPriorityCountry(school) &&
+      Number.isFinite(school.latitude) &&
+      Number.isFinite(school.longitude)
+    );
+  });
+}
+
 function indexKpiRows(rows) {
   const index = new Map();
 
@@ -588,9 +629,12 @@ function initializeSlicers() {
   countryOptions = getCountryOptions();
   selectedCountries = new Set(countryOptions.map((country) => country.slug));
   districtSelectionMode = "all";
+  schoolSelectionMode = "all";
   refreshDistrictOptions();
+  refreshSchoolOptions();
   renderCountryList();
   renderDistrictList();
+  renderSchoolList();
   updateSlicerCounts();
 }
 
@@ -602,9 +646,13 @@ function initializePlaceholderSlicers() {
   selectedCountries = new Set(countryOptions.map((country) => country.slug));
   districtOptions = [];
   selectedDistricts = new Set();
+  schoolOptions = [];
+  selectedSchools = new Set();
   districtSelectionMode = "all";
+  schoolSelectionMode = "all";
   renderCountryList();
   renderDistrictList();
+  renderSchoolList();
   updateSlicerCounts();
 }
 
@@ -652,13 +700,46 @@ function refreshDistrictOptions() {
 
   if (districtSelectionMode === "all") {
     selectedDistricts = new Set(districtOptions.map((district) => district.key));
+  } else {
+    selectedDistricts = new Set(
+      districtOptions
+        .filter((district) => previousSelectedDistricts.has(district.key))
+        .map((district) => district.key)
+    );
+  }
+
+  refreshSchoolOptions();
+}
+
+function refreshSchoolOptions() {
+  const previousSelectedSchools = new Set(selectedSchools);
+  const schools = new Map();
+
+  allSchools
+    .filter((school) => selectedCountries.has(school.country_slug))
+    .filter((school) => selectedDistricts.has(getDistrictKey(school)))
+    .forEach((school) => {
+      schools.set(school.school_id, {
+        id: school.school_id,
+        name: school.school_name,
+        districtName: school.district_name,
+        countryName: school.country_name,
+      });
+    });
+
+  schoolOptions = Array.from(schools.values()).sort((a, b) => {
+    const countryCompare = a.countryName.localeCompare(b.countryName);
+    const districtCompare = countryCompare || a.districtName.localeCompare(b.districtName);
+    return districtCompare || a.name.localeCompare(b.name);
+  });
+
+  if (schoolSelectionMode === "all") {
+    selectedSchools = new Set(schoolOptions.map((school) => school.id));
     return;
   }
 
-  selectedDistricts = new Set(
-    districtOptions
-      .filter((district) => previousSelectedDistricts.has(district.key))
-      .map((district) => district.key)
+  selectedSchools = new Set(
+    schoolOptions.filter((school) => previousSelectedSchools.has(school.id)).map((school) => school.id)
   );
 }
 
@@ -699,6 +780,25 @@ function renderDistrictList() {
     .join("");
 }
 
+function renderSchoolList() {
+  const searchTerm = schoolSearch.value.trim().toLowerCase();
+  const visibleSchools = schoolOptions.filter((school) =>
+    `${school.name} ${school.districtName} ${school.countryName}`.toLowerCase().includes(searchTerm)
+  );
+
+  schoolList.innerHTML = visibleSchools
+    .map((school) =>
+      renderCheckboxRow({
+        type: "school",
+        value: school.id,
+        label: school.name,
+        meta: `${school.districtName}, ${school.countryName}`,
+        checked: selectedSchools.has(school.id),
+      })
+    )
+    .join("");
+}
+
 function renderCheckboxRow({ type, value, label, meta = "", checked }) {
   return `
     <label class="check-row">
@@ -723,6 +823,11 @@ function updateSlicerCounts() {
     selectedDistricts.size,
     districtOptions.length,
     "Districts"
+  );
+  schoolButtonText.textContent = formatButtonText(
+    selectedSchools.size,
+    schoolOptions.length,
+    "Schools"
   );
 }
 
@@ -784,6 +889,16 @@ function normalizeSupabaseDistrict(row) {
   };
 }
 
+function normalizeSupabaseSchool(row) {
+  return {
+    ...row,
+    school_id: String(row.school_id),
+    latitude: Number(row.latitude),
+    longitude: Number(row.longitude),
+    kpis: normalizeKpis(row.kpis),
+  };
+}
+
 function normalizeKpis(kpis) {
   if (!kpis) return {};
   return typeof kpis === "string" ? JSON.parse(kpis) : kpis;
@@ -826,6 +941,7 @@ function renderDistricts() {
 
   updateMapEmptyState(filtered.length);
   map.invalidateSize();
+  renderSchools();
   renderCountryChart(filtered);
   renderLegend(filtered);
   setStatus(
@@ -833,12 +949,55 @@ function renderDistricts() {
       ? "Supabase connected, but no boundary rows were returned."
       : `Showing ${filtered.length} boundary layer${
           filtered.length === 1 ? "" : "s"
-        }. KPI rows loaded: ${loadedKpiRowCount}. ${getKpiAvailabilityMessage(filtered)}`
+        } and ${getVisibleSchools().length} school point${
+          getVisibleSchools().length === 1 ? "" : "s"
+        }. KPI rows loaded: ${loadedKpiRowCount}. School rows loaded: ${loadedSchoolRowCount}. ${getKpiAvailabilityMessage(filtered)}`
   );
 }
 
 function updateMapEmptyState(featureCount) {
   mapEmpty.hidden = featureCount > 0;
+}
+
+function getVisibleSchools() {
+  return allSchools.filter((school) => {
+    return (
+      selectedCountries.has(school.country_slug) &&
+      selectedDistricts.has(getDistrictKey(school)) &&
+      selectedSchools.has(school.school_id)
+    );
+  });
+}
+
+function renderSchools() {
+  const visibleSchools = getVisibleSchools();
+
+  if (schoolLayer) {
+    schoolLayer.remove();
+  }
+
+  const maxValue = Math.max(
+    ...visibleSchools.map((school) => getDistrictMetric(school, metricSelect.value)),
+    0
+  );
+
+  const featureCollection = {
+    type: "FeatureCollection",
+    features: visibleSchools.map((school) => ({
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [school.longitude, school.latitude],
+      },
+      properties: school,
+    })),
+  };
+
+  schoolLayer = L.geoJSON(featureCollection, {
+    pointToLayer: (feature, latlng) =>
+      L.circleMarker(latlng, getSchoolMarkerStyle(feature.properties, maxValue)),
+    onEachFeature: bindSchoolPopup,
+  }).addTo(map);
 }
 
 function renderCountryChart(districts) {
@@ -911,6 +1070,22 @@ function districtStyle(feature) {
     fillColor:
       isPriority && !isCountryContext ? colorForValue(value, metric) : "#ded8d1",
     fillOpacity: isCountryContext ? 0.12 : isPriority ? 0.72 : 0.28,
+  };
+}
+
+function getSchoolMarkerStyle(school, maxValue) {
+  const metric = metricSelect.value;
+  const value = getDistrictMetric(school, metric);
+  const ratio = maxValue > 0 ? value / maxValue : 0;
+
+  return {
+    radius: 5 + ratio * 12,
+    color: "#25123c",
+    weight: 1.4,
+    opacity: 0.92,
+    fillColor: maxValue > 0 ? LEVEL_COLORS[getMetricLevel(value, maxValue) - 1] : "#b78f2f",
+    fillOpacity: 0.88,
+    className: "school-marker",
   };
 }
 
@@ -1010,6 +1185,30 @@ function bindDistrictPopup(feature, layer) {
   `);
   layer.bindTooltip(
     `${escapeHtml(district.district_name)}: ${formatMetric(value, metric)} ${escapeHtml(
+      getMetricLabel(metric)
+    )}`,
+    { sticky: true }
+  );
+}
+
+function bindSchoolPopup(feature, layer) {
+  const school = feature.properties;
+  const metric = metricSelect.value;
+  const value = getDistrictMetric(school, metric);
+
+  layer.bindPopup(`
+    <div class="district-popup">
+      <strong>${escapeHtml(school.school_name)}</strong>
+      <dl>
+        <dt>District</dt><dd>${escapeHtml(school.district_name)}</dd>
+        <dt>Country</dt><dd>${escapeHtml(school.country_name)}</dd>
+        <dt>${escapeHtml(getMetricLabel(metric))}</dt><dd>${formatMetric(value, metric)}</dd>
+        <dt>Location</dt><dd>${escapeHtml(school.geo_source || "GPS")}</dd>
+      </dl>
+    </div>
+  `);
+  layer.bindTooltip(
+    `${escapeHtml(school.school_name)}: ${formatMetric(value, metric)} ${escapeHtml(
       getMetricLabel(metric)
     )}`,
     { sticky: true }
@@ -1145,6 +1344,7 @@ function escapeHtml(value) {
 
 countrySearch.addEventListener("input", renderCountryList);
 districtSearch.addEventListener("input", renderDistrictList);
+schoolSearch.addEventListener("input", renderSchoolList);
 metricSelect.addEventListener("change", renderDistricts);
 yearStart.addEventListener("input", () => {
   updateYearRangeText();
@@ -1154,8 +1354,9 @@ yearEnd.addEventListener("input", () => {
   updateYearRangeText();
   renderDistricts();
 });
-countryToggle.addEventListener("click", () => toggleMenu(countryMenu, districtMenu));
-districtToggle.addEventListener("click", () => toggleMenu(districtMenu, countryMenu));
+countryToggle.addEventListener("click", () => toggleMenu(countryMenu, districtMenu, schoolMenu));
+districtToggle.addEventListener("click", () => toggleMenu(districtMenu, countryMenu, schoolMenu));
+schoolToggle.addEventListener("click", () => toggleMenu(schoolMenu, countryMenu, districtMenu));
 document.addEventListener("click", (event) => {
   if (!event.target.closest(".slicer")) {
     closeSlicerMenus();
@@ -1164,33 +1365,61 @@ document.addEventListener("click", (event) => {
 countryAll.addEventListener("click", () => {
   selectedCountries = new Set(countryOptions.map((country) => country.slug));
   districtSelectionMode = "all";
+  schoolSelectionMode = "all";
   refreshDistrictOptions();
+  refreshSchoolOptions();
   renderCountryList();
   renderDistrictList();
+  renderSchoolList();
   updateSlicerCounts();
   renderDistricts();
 });
 countryNone.addEventListener("click", () => {
   selectedCountries = new Set();
   selectedDistricts = new Set();
+  selectedSchools = new Set();
   districtSelectionMode = "none";
+  schoolSelectionMode = "none";
   refreshDistrictOptions();
+  refreshSchoolOptions();
   renderCountryList();
   renderDistrictList();
+  renderSchoolList();
   updateSlicerCounts();
   renderDistricts();
 });
 districtAll.addEventListener("click", () => {
   districtSelectionMode = "all";
+  schoolSelectionMode = "all";
   selectedDistricts = new Set(districtOptions.map((district) => district.key));
+  refreshSchoolOptions();
   renderDistrictList();
+  renderSchoolList();
   updateSlicerCounts();
   renderDistricts();
 });
 districtNone.addEventListener("click", () => {
   districtSelectionMode = "none";
+  schoolSelectionMode = "none";
   selectedDistricts = new Set();
+  selectedSchools = new Set();
+  refreshSchoolOptions();
   renderDistrictList();
+  renderSchoolList();
+  updateSlicerCounts();
+  renderDistricts();
+});
+schoolAll.addEventListener("click", () => {
+  schoolSelectionMode = "all";
+  selectedSchools = new Set(schoolOptions.map((school) => school.id));
+  renderSchoolList();
+  updateSlicerCounts();
+  renderDistricts();
+});
+schoolNone.addEventListener("click", () => {
+  schoolSelectionMode = "none";
+  selectedSchools = new Set();
+  renderSchoolList();
   updateSlicerCounts();
   renderDistricts();
 });
@@ -1204,9 +1433,12 @@ countryList.addEventListener("change", (event) => {
   }
 
   districtSelectionMode = "all";
+  schoolSelectionMode = "all";
   refreshDistrictOptions();
+  refreshSchoolOptions();
   renderCountryList();
   renderDistrictList();
+  renderSchoolList();
   updateSlicerCounts();
   renderDistricts();
 });
@@ -1220,31 +1452,55 @@ districtList.addEventListener("change", (event) => {
   }
   districtSelectionMode =
     selectedDistricts.size === districtOptions.length ? "all" : "custom";
+  schoolSelectionMode = "all";
+  refreshSchoolOptions();
 
   renderDistrictList();
+  renderSchoolList();
+  updateSlicerCounts();
+  renderDistricts();
+});
+schoolList.addEventListener("change", (event) => {
+  if (!event.target.matches('input[data-type="school"]')) return;
+
+  if (event.target.checked) {
+    selectedSchools.add(event.target.value);
+  } else {
+    selectedSchools.delete(event.target.value);
+  }
+  schoolSelectionMode = selectedSchools.size === schoolOptions.length ? "all" : "custom";
+
+  renderSchoolList();
   updateSlicerCounts();
   renderDistricts();
 });
 
-function toggleMenu(menuToToggle, menuToClose) {
-  menuToClose.hidden = true;
+function toggleMenu(menuToToggle, ...menusToClose) {
+  menusToClose.forEach((menu) => {
+    menu.hidden = true;
+  });
   menuToToggle.hidden = !menuToToggle.hidden;
 }
 
 function closeSlicerMenus() {
   countryMenu.hidden = true;
   districtMenu.hidden = true;
+  schoolMenu.hidden = true;
 }
 
-loadDistricts()
-  .then((districts) => {
+Promise.all([loadDistricts(), loadSchools()])
+  .then(([districts, schools]) => {
     allDistricts = districts;
+    allSchools = schools;
+    loadedSchoolRowCount = schools.length;
     initializeSlicers();
     renderDistricts();
   })
   .catch((error) => {
     console.error(error);
     allDistricts = sampleDistricts;
+    allSchools = [];
+    loadedSchoolRowCount = 0;
     initializeSlicers();
     setStatus("Boundary data could not load, so sample data is shown.");
     renderDistricts();

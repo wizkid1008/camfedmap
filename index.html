@@ -64,6 +64,23 @@
             </div>
           </div>
 
+          <div class="filter-control slicer">
+            <span class="filter-label">School</span>
+            <button type="button" id="schoolToggle" class="filter-button">
+              <span id="schoolButtonText">Loading Schools</span>
+              <span class="chevron"></span>
+            </button>
+            <div id="schoolMenu" class="slicer-menu school-menu" hidden>
+              <input id="schoolSearch" type="search" placeholder="Search Schools..." />
+              <div class="slicer-links">
+                <button type="button" id="schoolAll">Select All</button>
+                <span></span>
+                <button type="button" id="schoolNone">Select None</button>
+              </div>
+              <div id="schoolList" class="check-list" aria-label="School options"></div>
+            </div>
+          </div>
+
           <div class="filter-control kpi-control">
             <span class="filter-label">KPI</span>
             <select id="metricSelect"></select>
