@@ -188,6 +188,10 @@ body {
   margin: 0 2px;
 }
 
+.chip-hidden {
+  display: none !important;
+}
+
 /* ── Segmented layer control ──────────────────────────────── */
 .seg-control {
   display: flex;

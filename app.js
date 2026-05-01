@@ -1012,8 +1012,9 @@ function updateFilterVisibility() {
   // Country → hide both District and School chips
   // District → hide School chip only
   // School   → show both
-  if (districtControl) districtControl.hidden = layer === "country";
-  if (schoolControl) schoolControl.hidden = layer === "country" || layer === "district";
+  // Use .chip-hidden class (display:none !important) so flex on .filter-chip cannot override it
+  districtControl?.classList.toggle("chip-hidden", layer === "country");
+  schoolControl?.classList.toggle("chip-hidden", layer === "country" || layer === "district");
 }
 
 function getActiveLayer() {
