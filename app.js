@@ -420,6 +420,9 @@ const mapEmpty = document.querySelector("#mapEmpty");
 const legendTitle = document.querySelector("#legendTitle");
 const legendSubtitle = document.querySelector("#legendSubtitle");
 const legendRows = document.querySelector("#legendRows");
+const inspectorType = document.querySelector("#inspectorType");
+const inspectorTitle = document.querySelector("#inspectorTitle");
+const inspectorDetails = document.querySelector("#inspectorDetails");
 
 const LEVEL_COLORS = ["#e7e0f0", "#c9bbdd", "#b78f2f", "#b5533d", "#6b22aa"];
 
@@ -1206,6 +1209,7 @@ function bindDistrictPopup(feature, layer) {
       className: "district-tooltip",
     }
   );
+  layer.on("mouseover", () => updateInspectorForDistrict(district));
 }
 
 function bindSchoolPopup(feature, layer) {
@@ -1230,6 +1234,50 @@ function bindSchoolPopup(feature, layer) {
     )}`,
     { sticky: true }
   );
+  layer.on("mouseover", () => updateInspectorForSchool(school));
+}
+
+function updateInspectorForDistrict(district) {
+  const metric = metricSelect.value;
+  const value = getDistrictMetric(district, metric);
+
+  inspectorType.textContent = district.boundary_level === "ADM0" ? "Country" : "District";
+  inspectorTitle.textContent = `${district.district_name}, ${district.country_name}`;
+  inspectorDetails.innerHTML = renderInspectorRows([
+    ["Country", district.country_name],
+    ["District", district.boundary_level === "ADM0" ? "Country boundary" : district.district_name],
+    ["KPI", getMetricLabel(metric)],
+    [getYearRangeLabel(), formatMetric(value, metric)],
+    ["Programs", formatNumber(district.program_count)],
+    ["Beneficiaries", formatNumber(district.beneficiary_count)],
+  ]);
+}
+
+function updateInspectorForSchool(school) {
+  const metric = metricSelect.value;
+  const value = getDistrictMetric(school, metric);
+
+  inspectorType.textContent = "School";
+  inspectorTitle.textContent = school.school_name;
+  inspectorDetails.innerHTML = renderInspectorRows([
+    ["Country", school.country_name],
+    ["District", school.district_name],
+    ["Province", school.province || "Not listed"],
+    ["KPI", getMetricLabel(metric)],
+    [getYearRangeLabel(), formatMetric(value, metric)],
+    ["GPS Source", school.geo_source || "GPS"],
+  ]);
+}
+
+function renderInspectorRows(rows) {
+  return rows
+    .map(
+      ([label, value]) => `
+        <dt>${escapeHtml(label)}</dt>
+        <dd>${escapeHtml(value)}</dd>
+      `
+    )
+    .join("");
 }
 
 function setStatus(message) {
