@@ -4,6 +4,7 @@ const path = require("path");
 const root = path.resolve(__dirname, "..");
 const inputFile = "C:\\Users\\Sisters\\Downloads\\schools_final.csv";
 const chunksDir = path.join(root, "school-sql-chunks");
+const importDir = path.join(root, "school-import");
 const chunkSize = 100;
 
 const countrySlugs = {
@@ -56,6 +57,11 @@ function parseCsv(text) {
 
 function sqlQuote(value) {
   return String(value || "").replace(/'/g, "''");
+}
+
+function csvQuote(value) {
+  const text = String(value ?? "");
+  return `"${text.replace(/"/g, '""')}"`;
 }
 
 function hashString(value) {
@@ -286,4 +292,49 @@ function writeChunks() {
   console.log(`Wrote ${rows.length} school rows to ${chunksDir}`);
 }
 
+function writeImportFiles() {
+  const csv = fs.readFileSync(inputFile, "utf8");
+  const rows = parseCsv(csv)
+    .filter((row) => countrySlugs[row.country])
+    .filter((row) => row.latitude && row.longitude);
+
+  fs.rmSync(importDir, { recursive: true, force: true });
+  fs.mkdirSync(importDir, { recursive: true });
+
+  const headers = [
+    "school_id",
+    "school_name",
+    "country_slug",
+    "country_name",
+    "district_name",
+    "province",
+    "latitude",
+    "longitude",
+    "geo_source",
+    "kpis",
+  ];
+
+  const csvRows = rows.map((row) => {
+    const values = [
+      row.id,
+      row.school_name,
+      countrySlugs[row.country],
+      row.country,
+      row.district,
+      row.province,
+      Number(row.latitude),
+      Number(row.longitude),
+      row.geo_source,
+      JSON.stringify(createKpis(row)),
+    ];
+    return values.map(csvQuote).join(",");
+  });
+
+  fs.writeFileSync(path.join(importDir, "schools_import.csv"), `${headers.join(",")}\n${csvRows.join("\n")}\n`);
+  fs.writeFileSync(path.join(importDir, "01_create_schools_table.sql"), getSetupSql());
+  fs.writeFileSync(path.join(importDir, "02_finalize_school_view.sql"), getFinalizeSql());
+  console.log(`Wrote CSV import files to ${importDir}`);
+}
+
 writeChunks();
+writeImportFiles();
