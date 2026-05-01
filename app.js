@@ -410,6 +410,8 @@ const metricSelect = document.querySelector("#metricSelect");
 const yearStart = document.querySelector("#yearStart");
 const yearEnd = document.querySelector("#yearEnd");
 const yearRangeText = document.querySelector("#yearRangeText");
+const districtLayerToggle = document.querySelector("#districtLayerToggle");
+const schoolLayerToggle = document.querySelector("#schoolLayerToggle");
 const statusText = document.querySelector("#statusText");
 const chartTitle = document.querySelector("#chartTitle");
 const chartMetricLabel = document.querySelector("#chartMetricLabel");
@@ -905,17 +907,8 @@ function normalizeKpis(kpis) {
 }
 
 function renderDistricts() {
-  const filtered = allDistricts.filter((district) => {
-    const isContextCountry = district.boundary_level === "ADM0";
-    const districtKey = getDistrictKey(district);
-    const countryMatch =
-      isContextCountry ||
-      (isPriorityCountry(district) &&
-        selectedCountries.has(district.country_slug) &&
-        selectedDistricts.has(districtKey));
-    const districtMatch = isContextCountry || selectedDistricts.has(districtKey);
-    return countryMatch && districtMatch;
-  });
+  const filtered = getFilteredBoundaries();
+  const visibleSchools = getVisibleSchools();
 
   if (boundaryLayer) {
     boundaryLayer.remove();
@@ -941,7 +934,7 @@ function renderDistricts() {
 
   updateMapEmptyState(filtered.length);
   map.invalidateSize();
-  renderSchools();
+  renderSchools(visibleSchools);
   renderCountryChart(filtered);
   renderLegend(filtered);
   setStatus(
@@ -949,10 +942,26 @@ function renderDistricts() {
       ? "Supabase connected, but no boundary rows were returned."
       : `Showing ${filtered.length} boundary layer${
           filtered.length === 1 ? "" : "s"
-        } and ${getVisibleSchools().length} school point${
-          getVisibleSchools().length === 1 ? "" : "s"
+        } and ${schoolLayerToggle.checked ? visibleSchools.length : 0} school point${
+          visibleSchools.length === 1 ? "" : "s"
         }. KPI rows loaded: ${loadedKpiRowCount}. School rows loaded: ${loadedSchoolRowCount}. ${getKpiAvailabilityMessage(filtered)}`
   );
+}
+
+function getFilteredBoundaries() {
+  return allDistricts.filter((district) => {
+    const isContextCountry = district.boundary_level === "ADM0";
+    const districtKey = getDistrictKey(district);
+    const districtLayersVisible = districtLayerToggle.checked;
+    const countryMatch =
+      isContextCountry ||
+      (districtLayersVisible &&
+        isPriorityCountry(district) &&
+        selectedCountries.has(district.country_slug) &&
+        selectedDistricts.has(districtKey));
+    const districtMatch = isContextCountry || selectedDistricts.has(districtKey);
+    return countryMatch && districtMatch;
+  });
 }
 
 function updateMapEmptyState(featureCount) {
@@ -969,11 +978,13 @@ function getVisibleSchools() {
   });
 }
 
-function renderSchools() {
-  const visibleSchools = getVisibleSchools();
-
+function renderSchools(visibleSchools = getVisibleSchools()) {
   if (schoolLayer) {
     schoolLayer.remove();
+  }
+
+  if (!schoolLayerToggle.checked) {
+    return;
   }
 
   const maxValue = Math.max(
@@ -1184,10 +1195,16 @@ function bindDistrictPopup(feature, layer) {
     </div>
   `);
   layer.bindTooltip(
-    `${escapeHtml(district.district_name)}: ${formatMetric(value, metric)} ${escapeHtml(
-      getMetricLabel(metric)
-    )}`,
-    { sticky: true }
+    `
+      <strong>${escapeHtml(district.district_name)}</strong><br>
+      ${escapeHtml(district.country_name)}<br>
+      ${escapeHtml(getMetricLabel(metric))}: ${formatMetric(value, metric)}
+    `,
+    {
+      sticky: true,
+      direction: "top",
+      className: "district-tooltip",
+    }
   );
 }
 
@@ -1354,6 +1371,8 @@ yearEnd.addEventListener("input", () => {
   updateYearRangeText();
   renderDistricts();
 });
+districtLayerToggle.addEventListener("change", renderDistricts);
+schoolLayerToggle.addEventListener("change", renderDistricts);
 countryToggle.addEventListener("click", () => toggleMenu(countryMenu, districtMenu, schoolMenu));
 districtToggle.addEventListener("click", () => toggleMenu(districtMenu, countryMenu, schoolMenu));
 schoolToggle.addEventListener("click", () => toggleMenu(schoolMenu, countryMenu, districtMenu));
