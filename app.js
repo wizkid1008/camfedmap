@@ -585,16 +585,10 @@ async function loadSchools() {
     return [];
   }
 
-  const { data, error } = await client
-    .from(SUPABASE_SCHOOL_VIEW)
-    .select(
-      "school_id,school_name,country_slug,country_name,district_name,province,geo_source,latitude,longitude,kpis"
-    );
-
-  if (error) {
-    console.warn("School points could not be loaded from Supabase.", error);
-    return [];
-  }
+  const data = await fetchSupabaseRows(
+    SUPABASE_SCHOOL_VIEW,
+    "school_id,school_name,country_slug,country_name,district_name,province,geo_source,latitude,longitude,kpis"
+  );
 
   return data.map(normalizeSupabaseSchool).filter((school) => {
     return (
@@ -603,6 +597,30 @@ async function loadSchools() {
       Number.isFinite(school.longitude)
     );
   });
+}
+
+async function fetchSupabaseRows(tableName, columns, pageSize = 1000) {
+  const client = getSupabaseClient();
+  const rows = [];
+  let from = 0;
+
+  while (true) {
+    const to = from + pageSize - 1;
+    const { data, error } = await client.from(tableName).select(columns).range(from, to);
+
+    if (error) {
+      console.warn(`${tableName} rows could not be loaded from Supabase.`, error);
+      return rows;
+    }
+
+    rows.push(...(data || []));
+
+    if (!data || data.length < pageSize) {
+      return rows;
+    }
+
+    from += pageSize;
+  }
 }
 
 function indexKpiRows(rows) {
@@ -719,12 +737,63 @@ function isSchoolInSelectedDistricts(school) {
   }
 
   return districtOptions.some((district) => {
+    if (!selectedDistricts.has(district.key) || district.countrySlug !== school.country_slug) {
+      return false;
+    }
+
+    if (isDistrictNameMatch(district.name, school.district_name)) {
+      return true;
+    }
+
+    const boundary = allDistricts.find(
+      (item) => item.boundary_level !== "ADM0" && getDistrictKey(item) === district.key
+    );
+
     return (
-      selectedDistricts.has(district.key) &&
-      district.countrySlug === school.country_slug &&
-      isDistrictNameMatch(district.name, school.district_name)
+      boundary?.geometry &&
+      Number.isFinite(school.latitude) &&
+      Number.isFinite(school.longitude) &&
+      isPointInGeometry([school.longitude, school.latitude], boundary.geometry)
     );
   });
+}
+
+function isPointInGeometry(point, geometry) {
+  if (!geometry) return false;
+
+  if (geometry.type === "Polygon") {
+    return isPointInPolygon(point, geometry.coordinates);
+  }
+
+  if (geometry.type === "MultiPolygon") {
+    return geometry.coordinates.some((polygon) => isPointInPolygon(point, polygon));
+  }
+
+  return false;
+}
+
+function isPointInPolygon(point, rings) {
+  if (!rings?.length || !isPointInRing(point, rings[0])) {
+    return false;
+  }
+
+  return !rings.slice(1).some((ring) => isPointInRing(point, ring));
+}
+
+function isPointInRing([x, y], ring) {
+  let inside = false;
+
+  for (let index = 0, previousIndex = ring.length - 1; index < ring.length; previousIndex = index++) {
+    const [xi, yi] = ring[index];
+    const [xj, yj] = ring[previousIndex];
+    const intersects = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+
+    if (intersects) {
+      inside = !inside;
+    }
+  }
+
+  return inside;
 }
 
 function initializeSlicers() {
@@ -1049,15 +1118,12 @@ function renderDistricts() {
     onEachFeature: bindDistrictPopup,
   }).addTo(map);
 
-  if (filtered.length > 0) {
-    map.fitBounds(boundaryLayer.getBounds(), { padding: [28, 28] });
-  }
-
   updateMapEmptyState(
     filtered.length + (schoolLayerToggle.checked ? visibleSchools.length : 0)
   );
   map.invalidateSize();
   renderSchools(visibleSchools);
+  fitMapToActiveLayer(filtered, visibleSchools);
   renderLayerChart(filtered, visibleSchools);
   renderLegend(getLegendMetricSource(filtered, visibleSchools));
   setStatus(
@@ -1147,6 +1213,44 @@ function renderSchools(visibleSchools = getVisibleSchools()) {
       L.circleMarker(latlng, getSchoolMarkerStyle(feature.properties, maxValue)),
     onEachFeature: bindSchoolPopup,
   }).addTo(map);
+}
+
+function fitMapToActiveLayer(boundaries, schools) {
+  const activeLayer = getActiveLayer();
+  let bounds = null;
+
+  if (activeLayer === "school" && schools.length > 0) {
+    bounds = L.latLngBounds(schools.map((school) => [school.latitude, school.longitude]));
+  } else {
+    const activeBoundaries = boundaries.filter((boundary) => {
+      if (activeLayer === "country") {
+        return (
+          boundary.boundary_level === "ADM0" &&
+          isPriorityCountry(boundary) &&
+          selectedCountries.has(boundary.country_slug)
+        );
+      }
+
+      return boundary.boundary_level !== "ADM0" && selectedDistricts.has(getDistrictKey(boundary));
+    });
+
+    if (activeBoundaries.length > 0) {
+      bounds = L.geoJSON({
+        type: "FeatureCollection",
+        features: activeBoundaries.map((boundary) => ({
+          type: "Feature",
+          geometry: boundary.geometry,
+          properties: boundary,
+        })),
+      }).getBounds();
+    }
+  }
+
+  if (bounds?.isValid()) {
+    map.fitBounds(bounds, { padding: [34, 34], maxZoom: activeLayer === "school" ? 9 : 8 });
+  } else if (boundaryLayer?.getBounds().isValid()) {
+    map.fitBounds(boundaryLayer.getBounds(), { padding: [28, 28] });
+  }
 }
 
 function renderLayerChart(boundaries, schools) {
