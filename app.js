@@ -508,7 +508,7 @@ async function loadStorageDistrictGeojson() {
   loadedKpiRowCount = kpiRows.length;
 
   const kpisByDistrict = indexKpiRows(kpiRows);
-  const countryContext = adm0Geojson.features
+  const rawCountryContext = adm0Geojson.features
     .filter((feature) => AFRICA_ISO3_CODES.includes(feature.properties.shapeGroup))
     .map(normalizeStorageFeature);
   const districts = adm2Geojson.features
@@ -524,6 +524,11 @@ async function loadStorageDistrictGeojson() {
         ...getMergedKpiValues(district, kpisByDistrict),
       };
     });
+  const countryKpis = aggregateDistrictsToCountries(districts);
+  const countryContext = rawCountryContext.map((country) => ({
+    ...country,
+    ...(countryKpis.get(country.country_slug) || {}),
+  }));
   const boundaries = [...countryContext, ...districts];
 
   setStatus(
@@ -628,6 +633,59 @@ function getMergedKpiValues(district, kpisByDistrict) {
     risk_score: Number(row.risk_score || 0),
     kpis: row.kpis || {},
   };
+}
+
+function aggregateDistrictsToCountries(districts) {
+  const countries = new Map();
+
+  districts.filter(isPriorityCountry).forEach((district) => {
+    const current = countries.get(district.country_slug) || {
+      country_slug: district.country_slug,
+      country_name: district.country_name,
+      district_name: district.country_name,
+      boundary_level: "ADM0",
+      program_count: 0,
+      beneficiary_count: 0,
+      risk_score_total: 0,
+      risk_score_count: 0,
+      kpis: { years: {} },
+    };
+
+    current.program_count += Number(district.program_count || 0);
+    current.beneficiary_count += Number(district.beneficiary_count || 0);
+    current.risk_score_total += Number(district.risk_score || 0);
+    current.risk_score_count += 1;
+
+    KPI_DEFINITIONS.forEach((kpi) => {
+      const flatValue = district.kpis?.[kpi.key];
+      if (flatValue !== undefined) {
+        current.kpis[kpi.key] = Number(current.kpis[kpi.key] || 0) + Number(flatValue || 0);
+      }
+
+      YEARS.forEach((year) => {
+        const yearKey = String(year);
+        const value = getRawDistrictMetric(district, kpi.key, yearKey, { yearlyOnly: true });
+        if (value === undefined || value === null) return;
+
+        current.kpis.years[yearKey] ||= {};
+        current.kpis.years[yearKey][kpi.key] =
+          Number(current.kpis.years[yearKey][kpi.key] || 0) + Number(value || 0);
+      });
+    });
+
+    countries.set(district.country_slug, current);
+  });
+
+  return new Map(
+    Array.from(countries.entries()).map(([slug, country]) => [
+      slug,
+      {
+        ...country,
+        risk_score:
+          country.risk_score_count > 0 ? country.risk_score_total / country.risk_score_count : 0,
+      },
+    ])
+  );
 }
 
 function getDistrictKey(district) {
@@ -1101,15 +1159,22 @@ function districtStyle(feature) {
   const metric = metricSelect.value;
   const isPriority = isPriorityCountry(feature.properties);
   const isCountryContext = feature.properties.boundary_level === "ADM0";
+  const isCountryDataLayer =
+    isCountryContext &&
+    isPriority &&
+    selectedCountries.has(feature.properties.country_slug) &&
+    !districtLayerToggle.checked;
+  const isDataLayer = isPriority && (!isCountryContext || isCountryDataLayer);
   const value = getDistrictMetric(feature.properties, metric);
 
   return {
-    color: isPriority && !isCountryContext ? "#3f2875" : "#a49da8",
-    weight: isCountryContext ? 1 : isPriority ? 1.4 : 0.7,
-    opacity: isCountryContext ? 0.5 : isPriority ? 0.92 : 0.45,
-    fillColor:
-      isPriority && !isCountryContext ? colorForValue(value, metric) : "#ded8d1",
-    fillOpacity: isCountryContext ? 0.12 : isPriority ? 0.72 : 0.28,
+    color: isDataLayer ? "#3f2875" : "#a49da8",
+    weight: isCountryContext ? (isCountryDataLayer ? 1.2 : 1) : isPriority ? 1.4 : 0.7,
+    opacity: isCountryContext ? (isCountryDataLayer ? 0.8 : 0.5) : isPriority ? 0.92 : 0.45,
+    fillColor: isDataLayer
+      ? colorForValue(value, metric, feature.properties.boundary_level)
+      : "#ded8d1",
+    fillOpacity: isCountryContext ? (isCountryDataLayer ? 0.66 : 0.12) : isPriority ? 0.72 : 0.28,
   };
 }
 
@@ -1133,8 +1198,8 @@ function isPriorityCountry(district) {
   return PRIORITY_COUNTRIES.includes(district.country_slug);
 }
 
-function colorForValue(value, metric) {
-  const max = getMaxMetricValue(metric, allDistricts);
+function colorForValue(value, metric, boundaryLevel = null) {
+  const max = getMaxMetricValue(metric, allDistricts, boundaryLevel);
   if (max <= 0) return "#d9d1e9";
 
   return LEVEL_COLORS[getMetricLevel(value, max) - 1];
@@ -1151,14 +1216,32 @@ function getMetricLevel(value, max) {
   return 5;
 }
 
-function getMaxMetricValue(metric, districts) {
+function getMaxMetricValue(metric, districts, boundaryLevel = null) {
+  const comparableBoundaries = getComparableMetricBoundaries(districts, boundaryLevel);
   return Math.max(
-    ...districts
-      .filter((district) => isPriorityCountry(district) && district.boundary_level !== "ADM0")
+    ...comparableBoundaries
       .map((district) => getDistrictMetric(district, metric))
       .filter((metricValue) => Number.isFinite(metricValue)),
     0
   );
+}
+
+function getComparableMetricBoundaries(boundaries, boundaryLevel = null) {
+  const priorityBoundaries = boundaries.filter(
+    (boundary) => isPriorityCountry(boundary) && selectedCountries.has(boundary.country_slug)
+  );
+
+  if (boundaryLevel) {
+    return priorityBoundaries.filter((boundary) => boundary.boundary_level === boundaryLevel);
+  }
+
+  const districtBoundaries = priorityBoundaries.filter(
+    (boundary) => boundary.boundary_level !== "ADM0"
+  );
+
+  return districtBoundaries.length > 0
+    ? districtBoundaries
+    : priorityBoundaries.filter((boundary) => boundary.boundary_level === "ADM0");
 }
 
 function renderLegend(districts) {
@@ -1412,8 +1495,7 @@ function updateYearRangeText() {
 function getKpiAvailabilityMessage(districts) {
   const metric = metricSelect.value;
   const yearLabel = getYearRangeLabel();
-  const matchingValues = districts
-    .filter((district) => isPriorityCountry(district) && district.boundary_level !== "ADM0")
+  const matchingValues = getComparableMetricBoundaries(districts)
     .map((district) => getDistrictMetric(district, metric))
     .filter((value) => value !== undefined && value !== null);
 
