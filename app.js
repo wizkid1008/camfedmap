@@ -410,9 +410,6 @@ const metricSelect = document.querySelector("#metricSelect");
 const yearStart = document.querySelector("#yearStart");
 const yearEnd = document.querySelector("#yearEnd");
 const yearRangeText = document.querySelector("#yearRangeText");
-const layerToggle = document.querySelector("#layerToggle");
-const layerMenu = document.querySelector("#layerMenu");
-const layerButtonText = document.querySelector("#layerButtonText");
 const countryLayerToggle = document.querySelector("#countryLayerToggle");
 const districtLayerToggle = document.querySelector("#districtLayerToggle");
 const schoolLayerToggle = document.querySelector("#schoolLayerToggle");
@@ -448,6 +445,7 @@ let loadedSchoolRowCount = 0;
 populateKpiOptions();
 initializeYearRange();
 initializePlaceholderSlicers();
+updateFilterVisibility();
 
 function getSupabaseClient() {
   const configured =
@@ -732,10 +730,14 @@ function isDistrictNameMatch(leftName, rightName) {
 }
 
 function isSchoolInSelectedDistricts(school) {
-  if (selectedDistricts.has(getDistrictKey(school))) {
-    return true;
-  }
+  // When no manual district filtering is active, all schools in
+  // selected countries are visible — country check already done upstream.
+  if (districtSelectionMode === "all") return true;
 
+  // Direct key match (country_slug::district_name)
+  if (selectedDistricts.has(getDistrictKey(school))) return true;
+
+  // Fuzzy name match then point-in-polygon fallback
   return districtOptions.some((district) => {
     if (!selectedDistricts.has(district.key) || district.countrySlug !== school.country_slug) {
       return false;
@@ -1000,11 +1002,15 @@ function updateSlicerCounts() {
     schoolOptions.length,
     "Schools"
   );
-  updateLayerButtonText();
 }
 
-function updateLayerButtonText() {
-  layerButtonText.textContent = getActiveLayerLabel();
+// Show/hide District and School filter chips based on active layer
+function updateFilterVisibility() {
+  const layer = getActiveLayer();
+  const districtControl = document.getElementById("districtControl");
+  const schoolControl = document.getElementById("schoolControl");
+  if (districtControl) districtControl.hidden = layer === "country";
+  if (schoolControl) schoolControl.hidden = layer !== "school";
 }
 
 function getActiveLayer() {
@@ -1483,12 +1489,22 @@ function bindDistrictPopup(feature, layer) {
       </dl>
     </div>
   `);
+  const isCountryBoundary = district.boundary_level === "ADM0";
+  const tooltipType = isCountryBoundary ? "Country" : "District";
+  const tooltipName = isCountryBoundary
+    ? district.country_name
+    : district.district_name;
+  const tooltipSub = isCountryBoundary ? "" : district.country_name;
+
   layer.bindTooltip(
-    `<strong>${escapeHtml(district.district_name)}</strong>`,
+    `<div class="map-tooltip">
+      <span class="map-tooltip-type">${tooltipType}</span>
+      <strong class="map-tooltip-name">${escapeHtml(tooltipName)}${tooltipSub ? `, ${escapeHtml(tooltipSub)}` : ""}</strong>
+    </div>`,
     {
       sticky: true,
       direction: "top",
-      className: "district-tooltip",
+      className: "map-tooltip-wrap",
     }
   );
   layer.on({
@@ -1514,11 +1530,14 @@ function bindSchoolPopup(feature, layer) {
     </div>
   `);
   layer.bindTooltip(
-    `<strong>${escapeHtml(school.school_name)}</strong>`,
+    `<div class="map-tooltip">
+      <span class="map-tooltip-type">School</span>
+      <strong class="map-tooltip-name">${escapeHtml(school.school_name)}</strong>
+    </div>`,
     {
       sticky: true,
       direction: "top",
-      className: "school-tooltip",
+      className: "map-tooltip-wrap",
     }
   );
   layer.on({
@@ -1739,10 +1758,6 @@ districtToggle.addEventListener("click", () =>
 schoolToggle.addEventListener("click", () =>
   toggleMenu(schoolMenu, countryMenu, districtMenu, layerMenu)
 );
-layerToggle.addEventListener("click", (event) => {
-  event.stopPropagation();
-  toggleMenu(layerMenu, countryMenu, districtMenu, schoolMenu);
-});
 document.addEventListener("click", (event) => {
   if (!event.target.closest(".slicer")) {
     closeSlicerMenus();
@@ -1872,11 +1887,10 @@ function closeSlicerMenus() {
   countryMenu.hidden = true;
   districtMenu.hidden = true;
   schoolMenu.hidden = true;
-  layerMenu.hidden = true;
 }
 
 function handleLayerChange() {
-  updateLayerButtonText();
+  updateFilterVisibility();
   renderDistricts();
 }
 
