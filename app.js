@@ -901,19 +901,19 @@ function updateSlicerCounts() {
 
 function updateLayerButtonText() {
   const selectedLayers = [
-    countryLayerToggle.checked ? "Countries" : null,
-    districtLayerToggle.checked ? "Districts" : null,
-    schoolLayerToggle.checked ? "Schools" : null,
+    countryLayerToggle.checked ? "Country Color" : null,
+    districtLayerToggle.checked ? "District Color" : null,
+    schoolLayerToggle.checked ? "School Pins" : null,
   ].filter(Boolean);
 
   if (selectedLayers.length === 0) {
-    layerButtonText.textContent = "No Layers";
+    layerButtonText.textContent = "No Data Layers";
   } else if (selectedLayers.length === 3) {
-    layerButtonText.textContent = "All Layers";
+    layerButtonText.textContent = "All Data Layers";
   } else if (selectedLayers.length === 1) {
     layerButtonText.textContent = selectedLayers[0];
   } else {
-    layerButtonText.textContent = `${selectedLayers.length} Layers`;
+    layerButtonText.textContent = `${selectedLayers.length} Data Layers`;
   }
 }
 
