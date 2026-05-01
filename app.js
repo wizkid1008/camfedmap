@@ -1750,13 +1750,13 @@ countryLayerToggle.addEventListener("change", handleLayerChange);
 districtLayerToggle.addEventListener("change", handleLayerChange);
 schoolLayerToggle.addEventListener("change", handleLayerChange);
 countryToggle.addEventListener("click", () =>
-  toggleMenu(countryMenu, districtMenu, schoolMenu, layerMenu)
+  toggleMenu(countryMenu, districtMenu, schoolMenu)
 );
 districtToggle.addEventListener("click", () =>
-  toggleMenu(districtMenu, countryMenu, schoolMenu, layerMenu)
+  toggleMenu(districtMenu, countryMenu, schoolMenu)
 );
 schoolToggle.addEventListener("click", () =>
-  toggleMenu(schoolMenu, countryMenu, districtMenu, layerMenu)
+  toggleMenu(schoolMenu, countryMenu, districtMenu)
 );
 document.addEventListener("click", (event) => {
   if (!event.target.closest(".slicer")) {
