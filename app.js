@@ -1235,7 +1235,10 @@ function bindDistrictPopup(feature, layer) {
       className: "district-tooltip",
     }
   );
-  layer.on("mouseover", () => updateInspectorForDistrict(district));
+  layer.on({
+    mouseover: () => updateInspectorForDistrict(district),
+    mousemove: () => updateInspectorForDistrict(district),
+  });
 }
 
 function bindSchoolPopup(feature, layer) {
@@ -1260,7 +1263,10 @@ function bindSchoolPopup(feature, layer) {
     )}`,
     { sticky: true }
   );
-  layer.on("mouseover", () => updateInspectorForSchool(school));
+  layer.on({
+    mouseover: () => updateInspectorForSchool(school),
+    mousemove: () => updateInspectorForSchool(school),
+  });
 }
 
 function updateInspectorForDistrict(district) {
@@ -1457,9 +1463,10 @@ districtToggle.addEventListener("click", () =>
 schoolToggle.addEventListener("click", () =>
   toggleMenu(schoolMenu, countryMenu, districtMenu, layerMenu)
 );
-layerToggle.addEventListener("click", () =>
-  toggleMenu(layerMenu, countryMenu, districtMenu, schoolMenu)
-);
+layerToggle.addEventListener("click", (event) => {
+  event.stopPropagation();
+  toggleMenu(layerMenu, countryMenu, districtMenu, schoolMenu);
+});
 document.addEventListener("click", (event) => {
   if (!event.target.closest(".slicer")) {
     closeSlicerMenus();
