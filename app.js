@@ -1376,7 +1376,11 @@ function bindSchoolPopup(feature, layer) {
   `);
   layer.bindTooltip(
     `<strong>${escapeHtml(school.school_name)}</strong>`,
-    { sticky: true }
+    {
+      sticky: true,
+      direction: "top",
+      className: "school-tooltip",
+    }
   );
   layer.on({
     mouseover: () => updateInspectorForSchool(school),
