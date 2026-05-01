@@ -1544,6 +1544,7 @@ function bindDistrictPopup(feature, layer) {
       const tip = getMapTooltip();
       tip.innerHTML = tooltipHtml;
       tip.hidden = false;
+      if (_lastMapMouseEvent) moveMapTooltip(_lastMapMouseEvent);
       updateInspectorForDistrict(district);
     },
     mouseout: () => hideMapTooltip(),
@@ -1573,6 +1574,7 @@ function bindSchoolPopup(feature, layer) {
       const tip = getMapTooltip();
       tip.innerHTML = schoolTooltipHtml;
       tip.hidden = false;
+      if (_lastMapMouseEvent) moveMapTooltip(_lastMapMouseEvent);
       updateInspectorForSchool(school);
     },
     mouseout: () => hideMapTooltip(),
@@ -1770,7 +1772,11 @@ function escapeHtml(value) {
 // Native map-level mouse tracking — keeps the fixed tooltip glued to the
 // cursor on every pixel of movement regardless of Leaflet feature events.
 const mapEl = document.getElementById("map");
-mapEl.addEventListener("mousemove", (e) => moveMapTooltip(e));
+let _lastMapMouseEvent = null;
+mapEl.addEventListener("mousemove", (e) => {
+  _lastMapMouseEvent = e;
+  moveMapTooltip(e);
+});
 mapEl.addEventListener("mouseleave", () => hideMapTooltip());
 
 countrySearch.addEventListener("input", renderCountryList);
