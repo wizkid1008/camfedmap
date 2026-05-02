@@ -1479,44 +1479,29 @@ function formatRoundedLegendNumber(value) {
   return formatNumber(rounded);
 }
 
-// ── Leaflet hover tooltip ────────────────────────────────────────────────────
-// Single div on <body> — position:absolute + pageX/Y so scroll and overflow
-// on the map container can never clip or hide it.
+// ── Hover tooltip ────────────────────────────────────────────────────────────
+// Positioning is driven entirely by native window mousemove (guaranteed
+// pageX/pageY) so Leaflet coordinate quirks can never break it.
+// Leaflet layer events only set/clear the label — they never touch position.
 const mapHoverTooltip = document.createElement("div");
 mapHoverTooltip.className = "map-hover-tooltip";
 document.body.appendChild(mapHoverTooltip);
 
-function getTooltipPageCoords(e) {
-  // Prefer native event pageX/Y; fall back to Leaflet containerPoint + map offset
-  if (e.originalEvent && e.originalEvent.pageX != null) {
-    return { x: e.originalEvent.pageX, y: e.originalEvent.pageY };
+let _hoverLabel = null; // null = nothing hovered
+
+window.addEventListener("mousemove", (e) => {
+  if (_hoverLabel) {
+    mapHoverTooltip.innerHTML    = _hoverLabel;
+    mapHoverTooltip.style.display = "block";
+    mapHoverTooltip.style.left   = `${e.pageX + 14}px`;
+    mapHoverTooltip.style.top    = `${e.pageY + 14}px`;
+  } else {
+    mapHoverTooltip.style.display = "none";
   }
-  const mapRect = document.getElementById("map").getBoundingClientRect();
-  const cp = e.containerPoint || { x: 0, y: 0 };
-  return {
-    x: mapRect.left + cp.x + window.scrollX,
-    y: mapRect.top  + cp.y + window.scrollY,
-  };
-}
+});
 
-function showTooltip(e, labelHtml) {
-  mapHoverTooltip.innerHTML = labelHtml;
-  mapHoverTooltip.style.display = "block";
-  const { x, y } = getTooltipPageCoords(e);
-  mapHoverTooltip.style.left = `${x + 14}px`;
-  mapHoverTooltip.style.top  = `${y + 14}px`;
-}
-
-function moveTooltip(e) {
-  if (mapHoverTooltip.style.display === "none") return;
-  const { x, y } = getTooltipPageCoords(e);
-  mapHoverTooltip.style.left = `${x + 14}px`;
-  mapHoverTooltip.style.top  = `${y + 14}px`;
-}
-
-function hideTooltip() {
-  mapHoverTooltip.style.display = "none";
-}
+function showTooltip(labelHtml) { _hoverLabel = labelHtml; }
+function hideTooltip()          { _hoverLabel = null; }
 
 function buildTooltipLabel(type, name, sub) {
   return `<span class="mht-type">${escapeHtml(type)}</span>`
@@ -1544,9 +1529,8 @@ function bindDistrictPopup(feature, layer) {
   const tooltipLabel = buildTooltipLabel(tooltipType, tooltipName, tooltipSub);
 
   layer.on({
-    mouseover: (e) => { showTooltip(e, tooltipLabel); updateInspectorForDistrict(district); },
-    mousemove: (e) => moveTooltip(e),
-    mouseout:  ()  => { hideTooltip(); },
+    mouseover: () => { showTooltip(tooltipLabel); updateInspectorForDistrict(district); },
+    mouseout:  () => hideTooltip(),
   });
 }
 
@@ -1570,9 +1554,8 @@ function bindSchoolPopup(feature, layer) {
   const schoolLabel = buildTooltipLabel("School", schoolName, "");
 
   layer.on({
-    mouseover: (e) => { showTooltip(e, schoolLabel); updateInspectorForSchool(school); },
-    mousemove: (e) => moveTooltip(e),
-    mouseout:  ()  => { hideTooltip(); },
+    mouseover: () => { showTooltip(schoolLabel); updateInspectorForSchool(school); },
+    mouseout:  () => hideTooltip(),
   });
 }
 
@@ -1764,7 +1747,7 @@ function escapeHtml(value) {
   });
 }
 
-// Hide tooltip if mouse leaves the map entirely
+// Hide tooltip when mouse leaves the map
 document.getElementById("map").addEventListener("mouseleave", hideTooltip);
 
 countrySearch.addEventListener("input", renderCountryList);
