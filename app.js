@@ -1349,9 +1349,12 @@ function districtStyle(feature) {
       ? isSelectedPriorityCountry
       : isPriority && selectedDistricts.has(getDistrictKey(feature.properties)));
   const value = getDistrictMetric(feature.properties, metric);
+  const isInteractiveLayer =
+    (countryLayerToggle.checked && isCountryContext) ||
+    (districtLayerToggle.checked && !isCountryContext);
 
   return {
-    interactive: true,
+    interactive: isInteractiveLayer,
     bubblingMouseEvents: false,
     color: isDataLayer ? "#3f2875" : "#a49da8",
     weight: isCountryContext ? (isDataLayer ? 1.2 : 1) : isDataLayer ? 1.4 : 0.7,
@@ -1372,7 +1375,7 @@ function getSchoolMarkerStyle(school, maxValue) {
   return {
     interactive: true,
     bubblingMouseEvents: false,
-    radius: 5 + ratio * 12,
+    radius: 3 + ratio * 7,
     color: hasData ? "#25123c" : "#918895",
     weight: hasData ? 1.4 : 1,
     opacity: hasData ? 0.92 : 0.65,
@@ -1457,8 +1460,10 @@ function renderLegend(districts) {
     const start = (max * index) / 5;
     const end = (max * level) / 5;
     const rangeLabel = getLegendRangeLabel(start, end, level);
+    const gridColumn = index < 3 ? 1 : 2;
+    const gridRow = index < 3 ? index + 1 : index - 2;
     return `
-      <div class="legend-row">
+      <div class="legend-row" style="grid-column: ${gridColumn}; grid-row: ${gridRow};">
         <span class="swatch" style="background: ${color}"></span>
         <span class="legend-level">Level ${level}</span>
         <span class="legend-range">${rangeLabel}</span>
