@@ -428,6 +428,7 @@ const mapIntroOverlay = document.querySelector("#mapIntroOverlay");
 const mapIntroClose = document.querySelector("#mapIntroClose");
 const mapIntroExplore = document.querySelector("#mapIntroExplore");
 
+const LEVEL_ZERO_COLOR = "#ded8d1";
 const LEVEL_COLORS = ["#e7e0f0", "#c9bbdd", "#b78f2f", "#b5533d", "#6b22aa"];
 
 let allDistricts = [];
@@ -1373,7 +1374,7 @@ function districtStyle(feature) {
     opacity: isCountryContext ? (isDataLayer ? 0.8 : 0.5) : isDataLayer ? 0.92 : 0.45,
     fillColor: isDataLayer
       ? colorForValue(value, metric, feature.properties.boundary_level)
-      : "#ded8d1",
+      : LEVEL_ZERO_COLOR,
     fillOpacity: isCountryContext ? (isDataLayer ? 0.66 : 0.12) : isDataLayer ? 0.72 : 0.28,
   };
 }
@@ -1391,7 +1392,7 @@ function getSchoolMarkerStyle(school, maxValue) {
     color: hasData ? "#25123c" : "#918895",
     weight: hasData ? 1.4 : 1,
     opacity: hasData ? 0.92 : 0.65,
-    fillColor: hasData && maxValue > 0 ? LEVEL_COLORS[getMetricLevel(value, maxValue) - 1] : "#ded8d1",
+    fillColor: hasData && maxValue > 0 ? LEVEL_COLORS[getMetricLevel(value, maxValue) - 1] : LEVEL_ZERO_COLOR,
     fillOpacity: hasData ? 0.88 : 0.45,
     className: "school-marker",
   };
@@ -1403,7 +1404,7 @@ function isPriorityCountry(district) {
 
 function colorForValue(value, metric, boundaryLevel = null) {
   const max = getMaxMetricValue(metric, allDistricts, boundaryLevel);
-  if (max <= 0) return "#d9d1e9";
+  if (max <= 0) return LEVEL_ZERO_COLOR;
 
   return LEVEL_COLORS[getMetricLevel(value, max) - 1];
 }
@@ -1460,20 +1461,31 @@ function renderLegend(districts) {
 
   if (max <= 0) {
     legendRows.innerHTML = `
-      <div class="legend-empty">
-        No values loaded for this KPI and year.
+      <div class="legend-row legend-row-zero">
+        <span class="swatch" style="background: ${LEVEL_ZERO_COLOR}"></span>
+        <span class="legend-level">Level 0</span>
+        <span class="legend-range">No data or not selected</span>
       </div>
     `;
     return;
   }
 
-  legendRows.innerHTML = LEVEL_COLORS.map((color, index) => {
+  const levelZeroRow = `
+    <div class="legend-row legend-row-zero" style="grid-column: 1; grid-row: 1;">
+      <span class="swatch" style="background: ${LEVEL_ZERO_COLOR}"></span>
+      <span class="legend-level">Level 0</span>
+      <span class="legend-range">No data or not selected</span>
+    </div>
+  `;
+
+  const dataRows = LEVEL_COLORS.map((color, index) => {
     const level = index + 1;
     const start = (max * index) / 5;
     const end = (max * level) / 5;
     const rangeLabel = getLegendRangeLabel(start, end, level);
-    const gridColumn = index < 3 ? 1 : 2;
-    const gridRow = index < 3 ? index + 1 : index - 2;
+    const legendIndex = index + 1;
+    const gridColumn = legendIndex < 3 ? 1 : 2;
+    const gridRow = legendIndex < 3 ? legendIndex + 1 : legendIndex - 2;
     return `
       <div class="legend-row" style="grid-column: ${gridColumn}; grid-row: ${gridRow};">
         <span class="swatch" style="background: ${color}"></span>
@@ -1482,6 +1494,8 @@ function renderLegend(districts) {
       </div>
     `;
   }).join("");
+
+  legendRows.innerHTML = levelZeroRow + dataRows;
 }
 
 function getLegendRangeLabel(start, end, level) {
