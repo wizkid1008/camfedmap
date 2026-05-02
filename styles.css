@@ -871,11 +871,15 @@ input:focus {
 }
 
 #map .leaflet-tooltip-pane {
-  z-index: 650;
+  z-index: 1200;
 }
 
 #map .leaflet-popup-pane {
-  z-index: 700;
+  z-index: 1300;
+}
+
+#map .leaflet-interactive {
+  pointer-events: auto;
 }
 
 .map-empty {
@@ -950,6 +954,11 @@ input:focus {
   padding: 7px 11px;
   white-space: normal;
   min-width: 80px;
+}
+
+.map-feature-tooltip.leaflet-tooltip {
+  opacity: 1;
+  z-index: 1200;
 }
 
 /* Leaflet hover tooltip — position:absolute + pageX/Y, immune to map overflow */

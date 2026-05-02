@@ -1351,6 +1351,8 @@ function districtStyle(feature) {
   const value = getDistrictMetric(feature.properties, metric);
 
   return {
+    interactive: true,
+    bubblingMouseEvents: false,
     color: isDataLayer ? "#3f2875" : "#a49da8",
     weight: isCountryContext ? (isDataLayer ? 1.2 : 1) : isDataLayer ? 1.4 : 0.7,
     opacity: isCountryContext ? (isDataLayer ? 0.8 : 0.5) : isDataLayer ? 0.92 : 0.45,
@@ -1368,6 +1370,8 @@ function getSchoolMarkerStyle(school, maxValue) {
   const ratio = maxValue > 0 ? value / maxValue : 0;
 
   return {
+    interactive: true,
+    bubblingMouseEvents: false,
     radius: 5 + ratio * 12,
     color: hasData ? "#25123c" : "#918895",
     weight: hasData ? 1.4 : 1,
@@ -1507,7 +1511,15 @@ function bindDistrictPopup(feature, layer) {
     className: "map-feature-tooltip",
   });
 
-  layer.on({ mouseover: () => updateInspectorForDistrict(district) });
+  layer.on({
+    mouseover: (event) => {
+      updateInspectorForDistrict(district);
+      layer.openTooltip(event.latlng);
+      if (layer.bringToFront) layer.bringToFront();
+    },
+    mousemove: (event) => layer.openTooltip(event.latlng),
+    mouseout: () => layer.closeTooltip(),
+  });
 }
 
 function bindSchoolPopup(feature, layer) {
@@ -1533,7 +1545,15 @@ function bindSchoolPopup(feature, layer) {
     className: "map-feature-tooltip",
   });
 
-  layer.on({ mouseover: () => updateInspectorForSchool(school) });
+  layer.on({
+    mouseover: (event) => {
+      updateInspectorForSchool(school);
+      layer.openTooltip(event.latlng);
+      if (layer.bringToFront) layer.bringToFront();
+    },
+    mousemove: (event) => layer.openTooltip(event.latlng),
+    mouseout: () => layer.closeTooltip(),
+  });
 }
 
 function updateInspectorForDistrict(district) {
