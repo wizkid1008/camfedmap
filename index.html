@@ -157,6 +157,64 @@
 
         </section>
 
+        <section
+          id="mapIntroOverlay"
+          class="map-intro-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="mapIntroTitle"
+        >
+          <div class="map-intro-card">
+            <button type="button" id="mapIntroClose" class="map-intro-close" aria-label="Close map introduction">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke-linecap="round"/></svg>
+            </button>
+            <div class="map-intro-content">
+              <h1 id="mapIntroTitle">How to Use the Data Map</h1>
+              <p>
+                Explore country, district, and school-level programme data by choosing a layer, selecting places,
+                choosing a KPI, and adjusting the year range.
+              </p>
+
+              <ol class="map-intro-steps">
+                <li>
+                  <span>1</span>
+                  <div>
+                    <strong>Select a Map Layer</strong>
+                    <p>Choose Country, District, or School to change what is emphasized on the map.</p>
+                  </div>
+                </li>
+                <li>
+                  <span>2</span>
+                  <div>
+                    <strong>Filter the Geography</strong>
+                    <p>Use the searchable country, district, and school dropdowns to narrow the map.</p>
+                  </div>
+                </li>
+                <li>
+                  <span>3</span>
+                  <div>
+                    <strong>Choose a KPI and Year Range</strong>
+                    <p>The map colors, legend, and summary list update from the selected KPI and years.</p>
+                  </div>
+                </li>
+                <li>
+                  <span>4</span>
+                  <div>
+                    <strong>Hover for Details</strong>
+                    <p>Hover over the active layer to see country, district, or school details in the inspector.</p>
+                  </div>
+                </li>
+              </ol>
+
+              <div class="map-intro-tip">
+                <span aria-hidden="true">-></span>
+                <p>Use <strong>Layer</strong> to switch between country totals, district boundaries, and school points.</p>
+              </div>
+              <button type="button" id="mapIntroExplore" class="map-intro-action">Explore Map</button>
+            </div>
+          </div>
+        </section>
+
         <section class="dashboard-content">
           <section class="panel-grid">
             <article class="panel panel-map">

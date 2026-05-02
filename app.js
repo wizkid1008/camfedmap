@@ -424,6 +424,9 @@ const legendRows = document.querySelector("#legendRows");
 const inspectorType = document.querySelector("#inspectorType");
 const inspectorTitle = document.querySelector("#inspectorTitle");
 const inspectorDetails = document.querySelector("#inspectorDetails");
+const mapIntroOverlay = document.querySelector("#mapIntroOverlay");
+const mapIntroClose = document.querySelector("#mapIntroClose");
+const mapIntroExplore = document.querySelector("#mapIntroExplore");
 
 const LEVEL_COLORS = ["#e7e0f0", "#c9bbdd", "#b78f2f", "#b5533d", "#6b22aa"];
 
@@ -1806,6 +1809,12 @@ function escapeHtml(value) {
   });
 }
 
+function closeMapIntro() {
+  if (!mapIntroOverlay) return;
+  mapIntroOverlay.hidden = true;
+  map.invalidateSize();
+}
+
 countrySearch.addEventListener("input", renderCountryList);
 districtSearch.addEventListener("input", renderDistrictList);
 schoolSearch.addEventListener("input", renderSchoolList);
@@ -1829,6 +1838,18 @@ document.querySelectorAll(".seg-opt").forEach((label) => {
     if (input) input.checked = true;
     handleLayerChange();
   });
+});
+mapIntroClose?.addEventListener("click", closeMapIntro);
+mapIntroExplore?.addEventListener("click", closeMapIntro);
+mapIntroOverlay?.addEventListener("click", (event) => {
+  if (event.target === mapIntroOverlay) {
+    closeMapIntro();
+  }
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && mapIntroOverlay && !mapIntroOverlay.hidden) {
+    closeMapIntro();
+  }
 });
 countryToggle.addEventListener("click", () =>
   toggleMenu(countryMenu, districtMenu, schoolMenu)
