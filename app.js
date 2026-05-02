@@ -1489,25 +1489,6 @@ function formatRoundedLegendNumber(value) {
 // called after addTo(map) so the SVG node definitely exists.
 
 
-function getLayerCenter(layer, event) {
-  if (layer.getBounds) {
-    const bounds = layer.getBounds();
-    if (bounds?.isValid()) return bounds.getCenter();
-  }
-
-  if (layer.getLatLng) return layer.getLatLng();
-  return event?.latlng || map.getCenter();
-}
-
-function focusMapFeature(layer, event) {
-  const center = getLayerCenter(layer, event);
-  if (!center) return;
-
-  map.panTo(center, { animate: true, duration: 0.35 });
-  layer.openTooltip(center);
-  layer.openPopup(center);
-}
-
 function bindDistrictPopup(feature, layer) {
   const district = feature.properties;
   const metric = metricSelect.value;
@@ -1521,7 +1502,7 @@ function bindDistrictPopup(feature, layer) {
         <dt>Beneficiaries</dt><dd>${formatNumber(district.beneficiary_count)}</dd>
       </dl>
     </div>
-  `);
+  `, { autoPan: false });
   const isCountryBoundary = district.boundary_level === "ADM0";
   const tooltipName = isCountryBoundary ? district.country_name : district.district_name;
   layer.bindTooltip(tooltipName, {
@@ -1538,10 +1519,6 @@ function bindDistrictPopup(feature, layer) {
     },
     mousemove: (event) => layer.openTooltip(event.latlng),
     mouseout: () => layer.closeTooltip(),
-    click: (event) => {
-      updateInspectorForDistrict(district);
-      focusMapFeature(layer, event);
-    },
   });
 }
 
@@ -1560,7 +1537,7 @@ function bindSchoolPopup(feature, layer) {
         <dt>Location</dt><dd>${escapeHtml(school.geo_source || "GPS")}</dd>
       </dl>
     </div>
-  `);
+  `, { autoPan: false });
   const schoolName = school.school_name || school.name || school.item_name || "Unknown";
   layer.bindTooltip(schoolName, {
     sticky: true,
@@ -1576,10 +1553,6 @@ function bindSchoolPopup(feature, layer) {
     },
     mousemove: (event) => layer.openTooltip(event.latlng),
     mouseout: () => layer.closeTooltip(),
-    click: (event) => {
-      updateInspectorForSchool(school);
-      focusMapFeature(layer, event);
-    },
   });
 }
 
