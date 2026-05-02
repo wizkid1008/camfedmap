@@ -589,10 +589,16 @@ async function loadSchools() {
   );
 
   return data.map(normalizeSupabaseSchool).filter((school) => {
+    // Exclude schools with bad/invalid GPS (sentinel 0,0 or geo_source flagged)
+    const invalidSource = school.geo_source === "invalid_nulled" ||
+                          school.geo_source === "regeocode_failed_manual_needed";
+    const sentinelCoord = school.latitude === 0 && school.longitude === 0;
     return (
       isPriorityCountry(school) &&
       Number.isFinite(school.latitude) &&
-      Number.isFinite(school.longitude)
+      Number.isFinite(school.longitude) &&
+      !invalidSource &&
+      !sentinelCoord
     );
   });
 }
@@ -755,6 +761,9 @@ function isSchoolInSelectedDistricts(school) {
       boundary?.geometry &&
       Number.isFinite(school.latitude) &&
       Number.isFinite(school.longitude) &&
+      !(school.latitude === 0 && school.longitude === 0) &&
+      school.geo_source !== "invalid_nulled" &&
+      school.geo_source !== "regeocode_failed_manual_needed" &&
       isPointInGeometry([school.longitude, school.latitude], boundary.geometry)
     );
   });
