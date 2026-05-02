@@ -173,23 +173,27 @@
                   file URL and refresh the page.
                 </span>
               </div>
+              <div class="map-detail-grid">
+                <section class="map-detail-card chart-summary-card" aria-label="Selected metric chart">
+                  <div class="panel-heading">
+                    <h2 id="chartTitle">Priority Countries</h2>
+                    <span id="chartMetricLabel">Program count</span>
+                  </div>
+                  <div id="countryChart" class="bar-chart"></div>
+                </section>
+
+                <section class="map-detail-card chart-legend" aria-label="Map legend">
+                  <div class="legend-titlebar">
+                    <span>Legend</span>
+                    <h2 id="legendTitle">Program count</h2>
+                    <p id="legendSubtitle"></p>
+                  </div>
+                  <div id="legendRows" class="legend-rows"></div>
+                </section>
+              </div>
             </article>
 
-            <article class="panel chart-panel" aria-label="Country metric chart">
-              <div class="panel-heading">
-                <h2 id="chartTitle">Priority Countries</h2>
-                <span id="chartMetricLabel">Program count</span>
-              </div>
-              <div id="countryChart" class="bar-chart"></div>
-              <div class="chart-legend" aria-label="Map legend">
-                <div class="legend-titlebar">
-                  <span>Legend</span>
-                  <h2 id="legendTitle">Program count</h2>
-                  <p id="legendSubtitle"></p>
-                </div>
-                <div id="legendRows" class="legend-rows"></div>
-              </div>
-
+            <article class="panel chart-panel inspector-panel" aria-label="Map feature details">
               <div class="inspector-card" aria-live="polite">
                 <div class="inspector-titlebar">
                   <span id="inspectorType">Inspector</span>
