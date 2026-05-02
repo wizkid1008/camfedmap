@@ -882,6 +882,10 @@ input:focus {
   pointer-events: auto;
 }
 
+#map .leaflet-interactive:focus {
+  outline: none;
+}
+
 .map-empty {
   position: absolute;
   inset: 54px 0 0;
