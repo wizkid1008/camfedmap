@@ -1123,12 +1123,10 @@ function renderDistricts() {
     })),
   };
 
-  _layerLabels.clear();
   boundaryLayer = L.geoJSON(featureCollection, {
     style: districtStyle,
     onEachFeature: bindDistrictPopup,
   }).addTo(map);
-  attachNativeHoverEvents(boundaryLayer);
 
   updateMapEmptyState(
     filtered.length + (schoolLayerToggle.checked ? visibleSchools.length : 0)
@@ -1225,7 +1223,6 @@ function renderSchools(visibleSchools = getVisibleSchools()) {
       L.circleMarker(latlng, getSchoolMarkerStyle(feature.properties, maxValue)),
     onEachFeature: bindSchoolPopup,
   }).addTo(map);
-  attachNativeHoverEvents(schoolLayer);
 }
 
 function fitMapToActiveLayer(boundaries, schools) {
@@ -1486,43 +1483,7 @@ function formatRoundedLegendNumber(value) {
 // Positioning: native window mousemove — guaranteed pageX/pageY, no Leaflet.
 // Show/hide: native addEventListener on each SVG element via getElement(),
 // called after addTo(map) so the SVG node definitely exists.
-const mapHoverTooltip = document.createElement("div");
-mapHoverTooltip.className = "map-hover-tooltip";
-document.body.appendChild(mapHoverTooltip);
 
-let _hoverLabel = null;
-const _layerLabels = new Map(); // Leaflet layer → label html
-
-window.addEventListener("mousemove", (e) => {
-  if (_hoverLabel) {
-    mapHoverTooltip.innerHTML     = _hoverLabel;
-    mapHoverTooltip.style.display = "block";
-    mapHoverTooltip.style.left    = `${e.pageX + 14}px`;
-    mapHoverTooltip.style.top     = `${e.pageY + 14}px`;
-  } else {
-    mapHoverTooltip.style.display = "none";
-  }
-});
-
-function showTooltip(labelHtml) { _hoverLabel = labelHtml; }
-function hideTooltip()          { _hoverLabel = null; }
-
-// Called after a geoJSON layer is added to the map so getElement() works.
-function attachNativeHoverEvents(geoJsonLayer) {
-  geoJsonLayer.eachLayer((subLayer) => {
-    const label = _layerLabels.get(subLayer);
-    if (!label) return;
-    const el = typeof subLayer.getElement === "function" ? subLayer.getElement() : null;
-    if (!el) return;
-    el.addEventListener("mouseover", () => { _hoverLabel = label; });
-    el.addEventListener("mouseout",  () => { _hoverLabel = null; });
-  });
-}
-
-function buildTooltipLabel(type, name, sub) {
-  return `<span class="mht-type">${escapeHtml(type)}</span>`
-       + `<span class="mht-name">${escapeHtml(name)}${sub ? `, ${escapeHtml(sub)}` : ""}</span>`;
-}
 
 function bindDistrictPopup(feature, layer) {
   const district = feature.properties;
@@ -1539,13 +1500,13 @@ function bindDistrictPopup(feature, layer) {
     </div>
   `);
   const isCountryBoundary = district.boundary_level === "ADM0";
-  const tooltipType = isCountryBoundary ? "Country" : "District";
   const tooltipName = isCountryBoundary ? district.country_name : district.district_name;
-  const tooltipSub  = isCountryBoundary ? "" : district.country_name;
-  const tooltipLabel = buildTooltipLabel(tooltipType, tooltipName, tooltipSub);
-  _layerLabels.set(layer, tooltipLabel);
+  layer.bindTooltip(tooltipName, {
+    sticky: true,
+    direction: "top",
+    className: "map-feature-tooltip",
+  });
 
-  // Inspector update via Leaflet events (best-effort)
   layer.on({ mouseover: () => updateInspectorForDistrict(district) });
 }
 
@@ -1566,10 +1527,12 @@ function bindSchoolPopup(feature, layer) {
     </div>
   `);
   const schoolName = school.school_name || school.name || school.item_name || "Unknown";
-  const schoolLabel = buildTooltipLabel("School", schoolName, "");
-  _layerLabels.set(layer, schoolLabel);
+  layer.bindTooltip(schoolName, {
+    sticky: true,
+    direction: "top",
+    className: "map-feature-tooltip",
+  });
 
-  // Inspector update via Leaflet events (best-effort)
   layer.on({ mouseover: () => updateInspectorForSchool(school) });
 }
 
@@ -1760,9 +1723,6 @@ function escapeHtml(value) {
     return entities[character];
   });
 }
-
-// Hide tooltip when mouse leaves the map
-document.getElementById("map").addEventListener("mouseleave", hideTooltip);
 
 countrySearch.addEventListener("input", renderCountryList);
 districtSearch.addEventListener("input", renderDistrictList);

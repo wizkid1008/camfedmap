@@ -935,7 +935,8 @@ input:focus {
 }
 
 .district-tooltip,
-.school-tooltip {
+.school-tooltip,
+.map-feature-tooltip {
   color: var(--ink);
   background: #fff;
   border: 1px solid #d9d1e4;
