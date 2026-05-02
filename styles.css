@@ -107,13 +107,20 @@ body {
   position: relative;
   z-index: 1000;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
-  gap: 4px 10px;
-  padding: 10px 24px;
+  gap: 8px 12px;
+  padding: 10px 24px 12px;
   background: #fff;
   border-bottom: 1.5px solid var(--line);
   overflow: visible;
+}
+
+.filterbar::before {
+  content: "";
+  order: 2;
+  flex: 0 0 100%;
+  height: 0;
 }
 
 .dashboard-content {
@@ -127,6 +134,21 @@ body {
   gap: 6px;
   flex-shrink: 0;
   position: relative;
+  order: 1;
+}
+
+#countryControl,
+#districtControl,
+#schoolControl {
+  order: 3;
+}
+
+.filterbar > .chip-divider {
+  order: 1;
+}
+
+#schoolControl + .chip-divider {
+  display: none;
 }
 
 .chip-icon {
