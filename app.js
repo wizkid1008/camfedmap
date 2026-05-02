@@ -1375,7 +1375,7 @@ function getSchoolMarkerStyle(school, maxValue) {
   return {
     interactive: true,
     bubblingMouseEvents: false,
-    radius: 3 + ratio * 7,
+    radius: 1 + ratio * 4,
     color: hasData ? "#25123c" : "#918895",
     weight: hasData ? 1.4 : 1,
     opacity: hasData ? 0.92 : 0.65,
