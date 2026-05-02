@@ -1123,10 +1123,12 @@ function renderDistricts() {
     })),
   };
 
+  _layerLabels.clear();
   boundaryLayer = L.geoJSON(featureCollection, {
     style: districtStyle,
     onEachFeature: bindDistrictPopup,
   }).addTo(map);
+  attachNativeHoverEvents(boundaryLayer);
 
   updateMapEmptyState(
     filtered.length + (schoolLayerToggle.checked ? visibleSchools.length : 0)
@@ -1223,6 +1225,7 @@ function renderSchools(visibleSchools = getVisibleSchools()) {
       L.circleMarker(latlng, getSchoolMarkerStyle(feature.properties, maxValue)),
     onEachFeature: bindSchoolPopup,
   }).addTo(map);
+  attachNativeHoverEvents(schoolLayer);
 }
 
 function fitMapToActiveLayer(boundaries, schools) {
@@ -1480,21 +1483,22 @@ function formatRoundedLegendNumber(value) {
 }
 
 // ── Hover tooltip ────────────────────────────────────────────────────────────
-// Positioning is driven entirely by native window mousemove (guaranteed
-// pageX/pageY) so Leaflet coordinate quirks can never break it.
-// Leaflet layer events only set/clear the label — they never touch position.
+// Positioning: native window mousemove — guaranteed pageX/pageY, no Leaflet.
+// Show/hide: native addEventListener on each SVG element via getElement(),
+// called after addTo(map) so the SVG node definitely exists.
 const mapHoverTooltip = document.createElement("div");
 mapHoverTooltip.className = "map-hover-tooltip";
 document.body.appendChild(mapHoverTooltip);
 
-let _hoverLabel = null; // null = nothing hovered
+let _hoverLabel = null;
+const _layerLabels = new Map(); // Leaflet layer → label html
 
 window.addEventListener("mousemove", (e) => {
   if (_hoverLabel) {
-    mapHoverTooltip.innerHTML    = _hoverLabel;
+    mapHoverTooltip.innerHTML     = _hoverLabel;
     mapHoverTooltip.style.display = "block";
-    mapHoverTooltip.style.left   = `${e.pageX + 14}px`;
-    mapHoverTooltip.style.top    = `${e.pageY + 14}px`;
+    mapHoverTooltip.style.left    = `${e.pageX + 14}px`;
+    mapHoverTooltip.style.top     = `${e.pageY + 14}px`;
   } else {
     mapHoverTooltip.style.display = "none";
   }
@@ -1502,6 +1506,18 @@ window.addEventListener("mousemove", (e) => {
 
 function showTooltip(labelHtml) { _hoverLabel = labelHtml; }
 function hideTooltip()          { _hoverLabel = null; }
+
+// Called after a geoJSON layer is added to the map so getElement() works.
+function attachNativeHoverEvents(geoJsonLayer) {
+  geoJsonLayer.eachLayer((subLayer) => {
+    const label = _layerLabels.get(subLayer);
+    if (!label) return;
+    const el = typeof subLayer.getElement === "function" ? subLayer.getElement() : null;
+    if (!el) return;
+    el.addEventListener("mouseover", () => { _hoverLabel = label; });
+    el.addEventListener("mouseout",  () => { _hoverLabel = null; });
+  });
+}
 
 function buildTooltipLabel(type, name, sub) {
   return `<span class="mht-type">${escapeHtml(type)}</span>`
@@ -1527,11 +1543,10 @@ function bindDistrictPopup(feature, layer) {
   const tooltipName = isCountryBoundary ? district.country_name : district.district_name;
   const tooltipSub  = isCountryBoundary ? "" : district.country_name;
   const tooltipLabel = buildTooltipLabel(tooltipType, tooltipName, tooltipSub);
+  _layerLabels.set(layer, tooltipLabel);
 
-  layer.on({
-    mouseover: () => { showTooltip(tooltipLabel); updateInspectorForDistrict(district); },
-    mouseout:  () => hideTooltip(),
-  });
+  // Inspector update via Leaflet events (best-effort)
+  layer.on({ mouseover: () => updateInspectorForDistrict(district) });
 }
 
 function bindSchoolPopup(feature, layer) {
@@ -1552,11 +1567,10 @@ function bindSchoolPopup(feature, layer) {
   `);
   const schoolName = school.school_name || school.name || school.item_name || "Unknown";
   const schoolLabel = buildTooltipLabel("School", schoolName, "");
+  _layerLabels.set(layer, schoolLabel);
 
-  layer.on({
-    mouseover: () => { showTooltip(schoolLabel); updateInspectorForSchool(school); },
-    mouseout:  () => hideTooltip(),
-  });
+  // Inspector update via Leaflet events (best-effort)
+  layer.on({ mouseover: () => updateInspectorForSchool(school) });
 }
 
 function updateInspectorForDistrict(district) {
