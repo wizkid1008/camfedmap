@@ -428,7 +428,7 @@ const mapIntroOverlay = document.querySelector("#mapIntroOverlay");
 const mapIntroClose = document.querySelector("#mapIntroClose");
 const mapIntroExplore = document.querySelector("#mapIntroExplore");
 
-const LEVEL_ZERO_COLOR = "#ded8d1";
+const LEVEL_ZERO_COLOR = "#ffffff";
 const LEVEL_COLORS = ["#e7e0f0", "#c9bbdd", "#b78f2f", "#b5533d", "#6b22aa"];
 
 let allDistricts = [];
