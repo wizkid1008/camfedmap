@@ -537,7 +537,7 @@ input:focus {
 
 .map-detail-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.92fr);
+  grid-template-columns: 1fr;
   gap: 14px;
   padding: 14px;
   background: #fff;
@@ -554,7 +554,7 @@ input:focus {
 
 .chart-summary-card {
   display: flex;
-  min-height: 230px;
+  min-height: 250px;
   flex-direction: column;
 }
 
@@ -751,7 +751,7 @@ input:focus {
 
 .map-detail-grid .chart-legend {
   display: flex;
-  min-height: 230px;
+  min-height: 210px;
   flex-direction: column;
   margin: 0;
   padding: 0 12px 12px;
@@ -829,11 +829,21 @@ input:focus {
 }
 
 .inspector-panel {
+  display: grid;
+  align-content: start;
+  gap: 14px;
   padding: 14px;
 }
 
 .inspector-panel .inspector-card {
-  min-height: 100%;
+  min-height: 0;
+}
+
+.inspector-panel .chart-summary-card .bar-chart {
+  max-height: 245px;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
 }
 
 .inspector-titlebar {

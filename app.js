@@ -1513,11 +1513,17 @@ function bindDistrictPopup(feature, layer) {
 
   layer.on({
     mouseover: (event) => {
+      if (!isDistrictHoverActive(district)) {
+        layer.closeTooltip();
+        return;
+      }
       updateInspectorForDistrict(district);
       layer.openTooltip(event.latlng);
       if (layer.bringToFront) layer.bringToFront();
     },
-    mousemove: (event) => layer.openTooltip(event.latlng),
+    mousemove: (event) => {
+      if (isDistrictHoverActive(district)) layer.openTooltip(event.latlng);
+    },
     mouseout: () => layer.closeTooltip(),
   });
 }
@@ -1547,13 +1553,43 @@ function bindSchoolPopup(feature, layer) {
 
   layer.on({
     mouseover: (event) => {
+      if (!schoolLayerToggle.checked) {
+        layer.closeTooltip();
+        return;
+      }
       updateInspectorForSchool(school);
       layer.openTooltip(event.latlng);
       if (layer.bringToFront) layer.bringToFront();
     },
-    mousemove: (event) => layer.openTooltip(event.latlng),
+    mousemove: (event) => {
+      if (schoolLayerToggle.checked) layer.openTooltip(event.latlng);
+    },
     mouseout: () => layer.closeTooltip(),
   });
+}
+
+function isDistrictHoverActive(district) {
+  const activeLayer = getActiveLayer();
+  const isCountryBoundary = district.boundary_level === "ADM0";
+
+  if (activeLayer === "country") {
+    return (
+      isCountryBoundary &&
+      isPriorityCountry(district) &&
+      selectedCountries.has(district.country_slug)
+    );
+  }
+
+  if (activeLayer === "district") {
+    return (
+      !isCountryBoundary &&
+      isPriorityCountry(district) &&
+      selectedCountries.has(district.country_slug) &&
+      selectedDistricts.has(getDistrictKey(district))
+    );
+  }
+
+  return false;
 }
 
 function updateInspectorForDistrict(district) {
@@ -1561,15 +1597,28 @@ function updateInspectorForDistrict(district) {
   const value = getDistrictMetric(district, metric);
 
   inspectorType.textContent = district.boundary_level === "ADM0" ? "Country" : "District";
-  inspectorTitle.textContent = `${district.district_name}, ${district.country_name}`;
-  inspectorDetails.innerHTML = renderInspectorRows([
-    ["Country", district.country_name],
-    ["District", district.boundary_level === "ADM0" ? "Country boundary" : district.district_name],
-    ["KPI", getMetricLabel(metric)],
-    [getYearRangeLabel(), formatMetric(value, metric)],
-    ["Programs", formatNumber(district.program_count)],
-    ["Beneficiaries", formatNumber(district.beneficiary_count)],
-  ]);
+  inspectorTitle.textContent =
+    district.boundary_level === "ADM0"
+      ? district.country_name
+      : `${district.district_name}, ${district.country_name}`;
+
+  const rows =
+    district.boundary_level === "ADM0"
+      ? [
+          ["Country", district.country_name],
+          [getYearRangeLabel(), formatMetric(value, metric)],
+          ["Programs", formatNumber(district.program_count)],
+          ["Beneficiaries", formatNumber(district.beneficiary_count)],
+        ]
+      : [
+          ["Country", district.country_name],
+          ["District", district.district_name],
+          [getYearRangeLabel(), formatMetric(value, metric)],
+          ["Programs", formatNumber(district.program_count)],
+          ["Beneficiaries", formatNumber(district.beneficiary_count)],
+        ];
+
+  inspectorDetails.innerHTML = renderInspectorRows(rows);
 }
 
 function updateInspectorForSchool(school) {
@@ -1582,7 +1631,6 @@ function updateInspectorForSchool(school) {
     ["Country", school.country_name],
     ["District", school.district_name],
     ["Province", school.province || "Not listed"],
-    ["KPI", getMetricLabel(metric)],
     [getYearRangeLabel(), formatMetric(value, metric)],
     ["GPS Source", school.geo_source || "GPS"],
   ]);
