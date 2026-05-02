@@ -296,8 +296,8 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 330px;
-  max-width: 390px;
+  min-width: 198px;
+  max-width: 234px;
 }
 
 .year-chip strong {
@@ -344,7 +344,7 @@ h2 {
   gap: 7px;
   width: 100%;
   min-width: 0;
-  max-width: 390px;
+  max-width: 234px;
 }
 
 .year-range-widget strong {
@@ -357,9 +357,9 @@ h2 {
 
 .range-slider {
   position: relative;
-  flex: 1 1 230px;
+  flex: 1 1 138px;
   height: 18px;
-  min-width: 230px;
+  min-width: 138px;
 }
 
 .range-slider::before {
